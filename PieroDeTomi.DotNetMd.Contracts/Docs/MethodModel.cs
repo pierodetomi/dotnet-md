@@ -1,4 +1,4 @@
-﻿namespace PieroDeTomi.DotNetMd.Models.Docs
+﻿namespace PieroDeTomi.DotNetMd.Contracts.Docs
 {
     public class MethodModel : NamedObjectBaseModel
     {

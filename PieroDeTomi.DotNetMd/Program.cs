@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using PieroDeTomi.DotNetMd;
+﻿using PieroDeTomi.DotNetMd;
 
 //const int expectedArgsCount = 1;
 
@@ -11,35 +10,12 @@ using PieroDeTomi.DotNetMd;
 //}
 
 //var assemblyFilePath = args[0];
-var assemblyFilePath = @"..\..\..\..\PieroDeTomi.DotNetMd.SampleLib\bin\Debug\net8.0\PieroDeTomi.DotNetMd.SampleLib.dll";
-var outputPath = @"..\..\..\..\docs";
-
-if (!Directory.Exists(outputPath))
-    Directory.CreateDirectory(outputPath);
+var configFilePath = @"..\..\..\..\_assets\dotnetmd.json";
 
 var logger = new ConsoleLogger();
-var parser = new AssemblyXmlDocParser(logger);
+var tool = new DotNetMdTool(configFilePath, logger);
 
-parser.LoadAssemblyAndXmlDoc(assemblyFilePath);
-var types = parser.GetTypes();
+tool.Run();
 
-var docGenerator = new DocGenerator(logger);
-
-types.ForEach(type =>
-{
-    var doc = docGenerator.GenerateDoc(type);
-
-    var sanitizedTypeName = type.Name.ToLower()
-        .Replace(" ", string.Empty)
-        .Replace(".", "-")
-        .Replace("<", "__")
-        .Replace(",", "__")
-        .Replace(">", "__");
-
-    File.WriteAllText(Path.Combine(outputPath, $"{sanitizedTypeName}.md"), doc);
-});
-
-//var json = JsonConvert.SerializeObject(types);
-//logger.LogDebug(message: json);
-
-Console.ReadLine();
+Console.WriteLine($"{Environment.NewLine}Generation completed. Press any key to exit ...");
+Console.ReadKey();

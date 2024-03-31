@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\docusaurus-category.json" />
+    <None Remove="Resources\docusaurus-front-matter.md" />
     <None Remove="Resources\template-header.md" />
     <None Remove="Resources\template-methods.md" />
     <None Remove="Resources\template-properties.md" />
@@ -17,6 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\docusaurus-category.json" />
+    <EmbeddedResource Include="Resources\docusaurus-front-matter.md" />
     <EmbeddedResource Include="Resources\template-header.md" />
     <EmbeddedResource Include="Resources\template-methods.md" />
     <EmbeddedResource Include="Resources\template-properties.md" />
@@ -28,6 +32,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PieroDeTomi.DotNetMd.Contracts\PieroDeTomi.DotNetMd.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

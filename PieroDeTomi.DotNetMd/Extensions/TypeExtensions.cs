@@ -1,7 +1,4 @@
-﻿using PieroDeTomi.DotNetMd.Models.Docs;
-using System.Linq;
-using System.Reflection;
-using System.Text;
+﻿using PieroDeTomi.DotNetMd.Contracts.Docs;
 using System.Xml;
 
 namespace PieroDeTomi.DotNetMd.Extensions

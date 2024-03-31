@@ -1,0 +1,8 @@
+﻿{
+    "label": "{{LABEL}}",
+    "position": {{POSITION}},
+    "link": {
+        "type": "generated-index",
+        "description": "{{DESCRIPTION}}"
+    }
+}

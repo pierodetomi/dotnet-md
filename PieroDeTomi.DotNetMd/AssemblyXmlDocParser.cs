@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using PieroDeTomi.DotNetMd.Contracts.Docs;
 using PieroDeTomi.DotNetMd.Extensions;
-using PieroDeTomi.DotNetMd.Models.Docs;
 using System.Reflection;
 using System.Xml;
 
@@ -13,7 +12,7 @@ namespace PieroDeTomi.DotNetMd
 
         private XmlDocument _xmlDocument;
 
-        public void LoadAssemblyAndXmlDoc(string assemblyFilePath)
+        public void LoadAssembly(string assemblyFilePath)
         {
             if (!File.Exists(assemblyFilePath))
                 throw new ApplicationException($"Assembly file {assemblyFilePath} does not exist.");

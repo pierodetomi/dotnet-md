@@ -8,6 +8,10 @@ namespace PieroDeTomi.DotNetMd
         
         private readonly Assembly _assembly;
 
+        public string DocusaurusCategory { get; private set; }
+        
+        public string DocusaurusFrontMatter { get; private set; }
+
         public string Header { get; private set; }
         
         public string TypeParams { get; private set; }
@@ -31,6 +35,8 @@ namespace PieroDeTomi.DotNetMd
         {
             _assembly = Assembly.GetExecutingAssembly();
 
+            DocusaurusCategory = GetTemplateContent($"{GetType().Namespace}.Resources.docusaurus-category.json");
+            DocusaurusFrontMatter = GetTemplateContent($"{GetType().Namespace}.Resources.docusaurus-front-matter.md");
             Header = GetTemplateContent($"{GetType().Namespace}.Resources.template-header.md");
             TypeParams = GetTemplateContent($"{GetType().Namespace}.Resources.template-type-params.md");
             TypeParam = GetTemplateContent($"{GetType().Namespace}.Resources.template-type-param.md");

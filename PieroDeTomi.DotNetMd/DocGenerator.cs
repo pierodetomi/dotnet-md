@@ -1,25 +1,87 @@
 ﻿using Microsoft.Extensions.Logging;
-using PieroDeTomi.DotNetMd.Models.Docs;
+using PieroDeTomi.DotNetMd.Contracts.Config;
+using PieroDeTomi.DotNetMd.Contracts.Docs;
 
 namespace PieroDeTomi.DotNetMd
 {
-    public class DocGenerator(ILogger logger)
+    public class DocGenerator(DocGenerationConfig configuration, ILogger logger)
     {
         private static readonly string _separator = $"{Environment.NewLine}{Environment.NewLine}";
 
-        public string GenerateDoc(TypeModel type)
+        public void GenerateDocs(List<TypeModel> types)
+        {
+            var currentNamespace = string.Empty;
+            var namespaceCount = 0;
+            var currentFileIndex = 0;
+
+            // Sort all types by namespace and (then by) name
+            types
+                .OrderBy(type => type.Namespace)
+                .ThenBy(type => type.Name)
+                .ToList()
+                .ForEach(type =>
+                {
+                    logger.LogInformation($"Generating documentation for {type.Name}");
+
+                    currentFileIndex++;
+
+                    var isNewNamespace = type.Namespace != currentNamespace;
+                    
+                    if (isNewNamespace)
+                    {
+                        currentNamespace = type.Namespace;
+                        namespaceCount++;
+
+                        currentFileIndex = 1;
+                    }
+
+                    var targetFolder = configuration.OutputPath;
+
+                    if (configuration.ShouldCreateNamespaceFolders)
+                    {
+                        var namespaceFolderName = GetSanitizedName(type.Namespace);
+                        var namespaceFolderPath = Path.Combine(configuration.OutputPath, namespaceFolderName);
+
+                        if (!Directory.Exists(namespaceFolderPath))
+                        {
+                            Directory.CreateDirectory(namespaceFolderPath);
+
+                        }
+
+                        if (isNewNamespace && configuration.IsDocusaurusProject)
+                            File.WriteAllText(Path.Combine(namespaceFolderPath, "_category_.json"), DocTemplates.Current.DocusaurusCategory
+                                .Replace("{{LABEL}}", type.Namespace)
+                                .Replace("{{POSITION}}", namespaceCount.ToString())
+                                .Replace("{{DESCRIPTION}}", $"{type.Namespace} namespace documentation"));
+
+                        targetFolder = namespaceFolderPath;
+                    }
+
+                    var markdown = BuildMarkdown(type, currentFileIndex);
+                    var targetFileName = $"{GetSanitizedName(type.Name)}.md";
+
+                    File.WriteAllText(Path.Combine(targetFolder, targetFileName), markdown);
+                });
+        }
+
+        private string BuildMarkdown(TypeModel type, int fileIndex)
         {
             List<string> docParts = [];
 
-            var header = DocTemplates.Current.Header
+            if (configuration.IsDocusaurusProject)
+            {
+                docParts.Add(DocTemplates.Current.DocusaurusFrontMatter
+                    .Replace("{{SIDEBAR_LABEL}}", type.Name)
+                    .Replace("{{SIDEBAR_POSITION}}", fileIndex.ToString()));
+            }
+
+            docParts.Add(DocTemplates.Current.Header
                 .Replace("{{NAME}}", type.Name)
                 .Replace("{{TYPE}}", type.ObjectType)
                 .Replace("{{NAMESPACE}}", type.Namespace)
                 .Replace("{{ASSEMBLY}}", type.Assembly)
                 .Replace("{{DECLARATION}}", type.Declaration)
-                .Replace("{{SUMMARY}}", type.Summary);
-
-            docParts.Add(header);
+                .Replace("{{SUMMARY}}", type.Summary));
 
             if (type.TypeParameters.Count > 0)
             {
@@ -34,10 +96,7 @@ namespace PieroDeTomi.DotNetMd
             }
 
             if (type.Remarks is not null)
-            {
-                var remarks = DocTemplates.Current.Remarks.Replace("{{REMARKS}}", type.Remarks);
-                docParts.Add(remarks);
-            }
+                docParts.Add(DocTemplates.Current.Remarks.Replace("{{REMARKS}}", type.Remarks));
 
             if (type.Properties.Count > 0)
             {
@@ -58,6 +117,16 @@ namespace PieroDeTomi.DotNetMd
             }
 
             return string.Join(_separator, docParts);
+        }
+
+        private static string GetSanitizedName(string name)
+        {
+            return name.ToLower()
+                .Replace(" ", string.Empty)
+                .Replace(".", "-")
+                .Replace("<", "__")
+                .Replace(",", "__")
+                .Replace(">", "__");
         }
     }
 }
