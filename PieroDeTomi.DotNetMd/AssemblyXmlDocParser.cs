@@ -34,7 +34,7 @@ namespace PieroDeTomi.DotNetMd
         {
             List<TypeModel> typeDescriptors = [];
 
-            _assembly.GetTypes().ToList().ForEach(type =>
+            _assembly.GetLoadableTypes().ForEach(type =>
             {
                 var typeIdentifier = $"T:{type.FullName}";
                 var typeXmlNode = _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{typeIdentifier}']");
