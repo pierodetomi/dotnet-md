@@ -14,15 +14,17 @@ class Program
 
         rootCommand.SetHandler(configurationFile =>
         {
+
+#if DEBUG
             configurationFile ??= new FileInfo(@"..\..\..\..\_assets\dotnetmd.json");
+#else
+            configurationFile.ThrowIfNull("Configuration file is required");
+#endif
 
             var logger = new ConsoleLogger();
             var tool = new DotNetMdTool(configurationFile.FullName, logger);
 
             tool.Run();
-
-            Console.WriteLine($"{Environment.NewLine}Generation completed. Press any key to exit ...");
-            Console.ReadKey();
         },
         configurationOption);
 

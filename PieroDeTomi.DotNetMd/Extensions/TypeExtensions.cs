@@ -7,32 +7,39 @@ namespace PieroDeTomi.DotNetMd.Extensions
     {
         public static TypeModel ToTypeModel(this Type type, XmlNode xmlDocNode = null)
         {
-            var descriptor = new TypeModel
+            try
             {
-                ObjectType = type.IsClass ? "class" : type.IsInterface ? "interface" : type.IsEnum ? "enum" : "struct",
-                Declaration = type.GetDeclaration(),
-                Name = type.GetDisplayName(),
-                Namespace = type.Namespace,
-                Assembly = $"{type.Assembly.GetName().Name}.dll",
-                Summary = xmlDocNode?["summary"]?.InnerText?.Trim(),
-                Remarks = xmlDocNode?["remarks"]?.InnerText?.Trim()
-            };
-
-            if (type.IsGenericType)
-                type.GetGenericArguments().ToList().ForEach(genericArgument =>
+                var descriptor = new TypeModel
                 {
-                    var typeParamXmlNode = xmlDocNode?.ChildNodes
-                        .Cast<XmlNode>()
-                        .FirstOrDefault(n => n.Name == "typeparam" && n.Attributes["name"].Value == genericArgument.Name);
+                    ObjectType = type.IsClass ? "class" : type.IsInterface ? "interface" : type.IsEnum ? "enum" : "struct",
+                    Declaration = type.GetDeclaration(),
+                    Name = type.GetDisplayName(),
+                    Namespace = type.Namespace,
+                    Assembly = $"{type.Assembly.GetName().Name}.dll",
+                    Summary = xmlDocNode?["summary"]?.InnerXml?.Trim(),
+                    Remarks = xmlDocNode?["remarks"]?.InnerXml?.Trim()
+                };
 
-                    descriptor.TypeParameters.Add(new ParamModel
+                if (type.IsGenericType)
+                    type.GetGenericArguments().ToList().ForEach(genericArgument =>
                     {
-                        Name = genericArgument.Name,
-                        Description = typeParamXmlNode?.InnerText?.Trim()
-                    });
-                });
+                        var typeParamXmlNode = xmlDocNode?.ChildNodes
+                            .Cast<XmlNode>()
+                            .FirstOrDefault(n => n.Name == "typeparam" && n.Attributes["name"].Value == genericArgument.Name);
 
-            return descriptor;
+                        descriptor.TypeParameters.Add(new ParamModel
+                        {
+                            Name = genericArgument.Name,
+                            Description = typeParamXmlNode?.InnerXml?.Trim()
+                        });
+                    });
+
+                return descriptor;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public static string GetDisplayName(this Type type)
@@ -42,7 +49,8 @@ namespace PieroDeTomi.DotNetMd.Extensions
 
             var genericType = type.GetGenericTypeDefinition();
 
-            var nameWithoutArguments = genericType.Name.Substring(0, genericType.Name.IndexOf('`'));
+            var name = genericType.FullName.Split('.').Last();
+            var nameWithoutArguments = name.Substring(0, name.IndexOf('`'));
             var typeArguments = string.Join(",", type.GetGenericArguments().Select(GetDisplayName));
 
             return $"{nameWithoutArguments}<{typeArguments}>";

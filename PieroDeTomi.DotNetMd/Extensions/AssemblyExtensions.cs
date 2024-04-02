@@ -10,12 +10,13 @@ namespace PieroDeTomi.DotNetMd.Extensions
 
             try
             {
-                return assembly.GetTypes().ToList();
+                var publicTypes = assembly.GetTypes();
+                return Array.FindAll(publicTypes, t => t.IsPublic && t.Assembly == assembly).ToList();
             }
             catch (ReflectionTypeLoadException e)
             {
                 return e.Types
-                    .Where(t => t is not null)
+                    .Where(t => t is not null && t.IsPublic && t.Assembly == assembly)
                     .ToList();
             }
         }

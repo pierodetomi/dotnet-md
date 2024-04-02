@@ -5,6 +5,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotnetmd</ToolCommandName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +31,10 @@
     <EmbeddedResource Include="Resources\template-remarks.md" />
     <EmbeddedResource Include="Resources\template-type-param.md" />
     <EmbeddedResource Include="Resources\template-type-params.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

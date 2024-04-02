@@ -40,12 +40,15 @@ namespace PieroDeTomi.DotNetMd
                 var typeXmlNode = _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{typeIdentifier}']");
 
                 if (typeXmlNode is null)
-                {
                     logger.LogWarning($"Unable to find XML documentation member for type {type.FullName}");
-                    return;
-                }
 
                 var typeDescriptor = type.ToTypeModel(typeXmlNode);
+
+                if (typeDescriptor is null)
+                {
+                    logger.LogError($"Unable to create type model for type {type.FullName}");
+                    return;
+                }
 
                 type.GetProperties()
                     .Where(m => m.DeclaringType == type && !m.IsSpecialName)
@@ -57,11 +60,18 @@ namespace PieroDeTomi.DotNetMd
 
                         logger.LogWarning($"Unable to find XML documentation node for property {propertyInfo.Name}");
 
-                        typeDescriptor.Properties.Add(new PropertyModel
+                        try
                         {
-                            Name = propertyInfo.Name,
-                            Type = propertyInfo.PropertyType.ToTypeModel(propertyXmlNode)
-                        });
+                            typeDescriptor.Properties.Add(new PropertyModel
+                            {
+                                Name = propertyInfo.Name,
+                                Type = propertyInfo.PropertyType.ToTypeModel(propertyXmlNode)
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, $"Unable to create property model for property {propertyInfo.Name} in type {type.Name}");
+                        }
                     });
 
                 type.GetMethods()
@@ -70,10 +80,18 @@ namespace PieroDeTomi.DotNetMd
                     .ForEach(methodInfo =>
                     {
                         var methodIdentifier = GetMethodIdentifier(methodInfo);
-                        var methodXmlNode = _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']");
+                        var methodXmlNode = methodIdentifier is not null ? _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']") : null;
 
                         logger.LogWarning($"Unable to find XML documentation node for property {methodInfo.Name}");
 
+                        var model = methodInfo.ToMethodModel(methodXmlNode);
+                        
+                        if (model is null)
+                        {
+                            logger.LogError($"Unable to create method model for method {methodInfo.Name}");
+                            return;
+                        }
+                            
                         typeDescriptor.Methods.Add(methodInfo.ToMethodModel(methodXmlNode));
                     });
 
@@ -89,32 +107,48 @@ namespace PieroDeTomi.DotNetMd
             return Path.Combine(xmlFilePath, $"{Path.GetFileNameWithoutExtension(assemblyFilePath)}.xml");
         }
 
-        private static string GetMethodIdentifier(MethodInfo methodInfo)
+        private string GetMethodIdentifier(MethodInfo methodInfo)
         {
-            // Construct method identifier for generic methods
-            var genericArguments = methodInfo.IsGenericMethod ? $"``{methodInfo.GetGenericArguments().Length}" : string.Empty;
+            try
+            {
+                // Construct method identifier for generic methods
+                var genericArguments = methodInfo.IsGenericMethod ? $"``{methodInfo.GetGenericArguments().Length}" : string.Empty;
 
-            // Construct method identifier
-            var parameters = string.Join(",", methodInfo.GetParameters().Select(p => GetParameterIdentifier(p.ParameterType)));
-            return $"M:{methodInfo.DeclaringType.FullName}.{methodInfo.Name}{genericArguments}({parameters})";
+                // Construct method identifier
+                var parameters = string.Join(",", methodInfo.GetParameters().Select(p => GetParameterIdentifier(p.ParameterType)));
+                return $"M:{methodInfo.DeclaringType.FullName}.{methodInfo.Name}{genericArguments}({parameters})";
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, $"Error constructing method identifier for method {methodInfo.Name}");
+                return null;
+            }
         }
 
-        private static string GetParameterIdentifier(Type parameterType)
+        private string GetParameterIdentifier(Type parameterType)
         {
-            if (parameterType.IsGenericMethodParameter)
-                return $"``{parameterType.GenericParameterPosition}";
+            try
+            {
+                if (parameterType.IsGenericMethodParameter)
+                    return $"``{parameterType.GenericParameterPosition}";
 
-            else if (parameterType.IsGenericTypeParameter)
-                return $"`{parameterType.GenericParameterPosition}";
+                else if (parameterType.IsGenericTypeParameter)
+                    return $"`{parameterType.GenericParameterPosition}";
 
-            else if (!parameterType.IsGenericType)
-                return parameterType.FullName;
+                else if (!parameterType.IsGenericType)
+                    return parameterType.FullName;
 
-            // For generic parameters, recursively construct the parameter identifier
-            var typeName = parameterType.GetGenericTypeDefinition().FullName;
-            var typeArguments = string.Join(",", parameterType.GetGenericArguments().Select(GetParameterIdentifier));
+                // For generic parameters, recursively construct the parameter identifier
+                var typeName = parameterType.GetGenericTypeDefinition().FullName;
+                var typeArguments = string.Join(",", parameterType.GetGenericArguments().Select(GetParameterIdentifier));
             
-            return $"{typeName}{{{typeArguments}}}";
+                return $"{typeName}{{{typeArguments}}}";
+            }
+            catch(Exception ex)
+            {
+                logger.LogError(ex, $"Error constructing parameter identifier for type {parameterType.FullName}");
+                return null;
+            }
         }
     }
 }
