@@ -51,7 +51,7 @@ class Program
 #if DEBUG
         configurationFile ??= new FileInfo(@"..\..\..\..\_assets\dotnetmd.json");
 #else
-        configurationFile.ThrowIfNull("Configuration file is required");
+        ArgumentNullException.ThrowIfNull(configurationFile);
 #endif
 
         var runtimeConfiguration = GetRuntimeConfiguration(configurationFile);

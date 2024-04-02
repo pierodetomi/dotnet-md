@@ -2,13 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <Version>1.1.0</Version>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Piero De Tomi</Authors>
+    <Description>DotNetMd is a simple tool for generating Markdown docs from .NET assemblies</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnetmd</ToolCommandName>
+    <RepositoryUrl>https://github.com/pierodetomi/dotnet-md</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
