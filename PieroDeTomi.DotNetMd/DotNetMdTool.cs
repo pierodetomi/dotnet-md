@@ -1,31 +1,27 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using Microsoft.Extensions.DependencyInjection;
 using PieroDeTomi.DotNetMd.Contracts.Config;
 using PieroDeTomi.DotNetMd.Contracts.Docs;
-using PieroDeTomi.DotNetMd.Extensions;
+using PieroDeTomi.DotNetMd.Services.Extensions;
 
 namespace PieroDeTomi.DotNetMd
 {
-    public class DotNetMdTool(string configFilePath, ILogger logger)
+    public class DotNetMdTool(string configFilePath, IServiceProvider serviceProvider)
     {
-        private readonly AssemblyXmlDocParser _parser = new(logger);
+        private readonly DocGenerationConfig _configuration = serviceProvider.GetRequiredService<DocGenerationConfig>();
+
+        private readonly IAssemblyDocParser _parser = serviceProvider.GetService<IAssemblyDocParser>();
 
         public void Run()
         {
-            if (!File.Exists(configFilePath))
-                throw new FileNotFoundException("Configuration file not found", configFilePath);
-
-            var configuration = JsonConvert.DeserializeObject<DocGenerationConfig>(File.ReadAllText(configFilePath));
-            
-            if (configuration.Assemblies.Count == 0)
+            if (_configuration.Assemblies.Count == 0)
                 throw new ApplicationException("No assemblies have been specified in the configuration file.");
 
-            if (!Directory.Exists(configuration.OutputPath))
-                Directory.CreateDirectory(configuration.OutputPath);
+            if (!Directory.Exists(_configuration.OutputPath))
+                Directory.CreateDirectory(_configuration.OutputPath);
 
-            var types = GetTypes(configuration);
-            
-            var docGenerator = new DocGenerator(configuration, logger);
+            var types = GetTypes(_configuration);
+
+            var docGenerator = new DocGenerator(serviceProvider);
             docGenerator.GenerateDocs(basePath: GetConfigBasePath(), types);
         }
 
@@ -38,8 +34,7 @@ namespace PieroDeTomi.DotNetMd
             configuration.Assemblies.ForEach(assemblyFilePath =>
             {
                 var absoluteAssemblyFilePath = assemblyFilePath.MakeAbsolute(baseConfigPath);
-                _parser.LoadAssembly(absoluteAssemblyFilePath);
-                types.AddRange(_parser.GetTypes());
+                types.AddRange(_parser.ParseTypes(absoluteAssemblyFilePath));
             });
 
             return types;

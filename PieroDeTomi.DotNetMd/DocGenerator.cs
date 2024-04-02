@@ -1,18 +1,30 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using PieroDeTomi.DotNetMd.Contracts;
 using PieroDeTomi.DotNetMd.Contracts.Config;
 using PieroDeTomi.DotNetMd.Contracts.Docs;
-using PieroDeTomi.DotNetMd.Extensions;
-using System.Text.RegularExpressions;
+using PieroDeTomi.DotNetMd.Services.Extensions;
 
 namespace PieroDeTomi.DotNetMd
 {
-    public class DocGenerator(DocGenerationConfig configuration, ILogger logger)
+    public class DocGenerator
     {
-        private static readonly string _separator = $"{Environment.NewLine}{Environment.NewLine}";
+        private readonly DocGenerationConfig _configuration;
+
+        private readonly ILogger _logger;
+
+        private readonly IMarkdownDocsGenerator _generator;
+
+        public DocGenerator(IServiceProvider serviceProvider)
+        {
+            _configuration = serviceProvider.GetRequiredService<DocGenerationConfig>();
+            _logger = serviceProvider.GetRequiredService<ILogger>();
+            _generator = serviceProvider.GetRequiredKeyedService<IMarkdownDocsGenerator>(_configuration.OutputStyle);
+        }
 
         public void GenerateDocs(string basePath, List<TypeModel> types)
         {
-            var outputFolder = configuration.OutputPath.MakeAbsolute(basePath);
+            var outputFolder = _configuration.OutputPath.MakeAbsolute(basePath);
 
             CleanupOutputPath(outputFolder);
 
@@ -27,7 +39,7 @@ namespace PieroDeTomi.DotNetMd
                 .ToList()
                 .ForEach(type =>
                 {
-                    logger.LogInformation($"Generating documentation for {type.Name}");
+                    _logger.LogInformation($"Generating documentation for {type.Name}");
 
                     currentFileIndex++;
 
@@ -43,155 +55,25 @@ namespace PieroDeTomi.DotNetMd
 
                     var targetFolder = outputFolder;
 
-                    if (configuration.ShouldCreateNamespaceFolders)
+                    if (_configuration.ShouldCreateNamespaceFolders)
                     {
-                        var namespaceFolderName = GetSanitizedName(type.Namespace);
+                        var namespaceFolderName = _generator.GetSanitizedFileName(type.Namespace);
                         var namespaceFolderPath = Path.Combine(targetFolder, namespaceFolderName);
 
                         if (!Directory.Exists(namespaceFolderPath))
                             Directory.CreateDirectory(namespaceFolderPath);
 
-                        if (isNewNamespace && configuration.IsDocusaurusProject)
-                            File.WriteAllText(Path.Combine(namespaceFolderPath, "_category_.json"), DocTemplates.Current.DocusaurusCategory
-                                .Replace("{{LABEL}}", type.Namespace)
-                                .Replace("{{POSITION}}", namespaceCount.ToString())
-                                .Replace("{{DESCRIPTION}}", $"{type.Namespace} namespace documentation"));
+                        if (isNewNamespace && _configuration.IsDocusaurusProject)
+                            _generator.WriteDocusaurusCategoryFile(namespaceFolderPath, type.Namespace, namespaceCount, $"{type.Namespace} namespace documentation");
 
                         targetFolder = namespaceFolderPath;
                     }
 
-                    var markdown = BuildMarkdown(type, currentFileIndex, types);
-                    var targetFileName = $"{GetSanitizedName(type.Name)}.md";
+                    var markdown = _generator.BuildMarkdown(type, types);
+                    var targetFileName = $"{_generator.GetSanitizedFileName(type.Name)}.md";
 
                     File.WriteAllText(Path.Combine(targetFolder, targetFileName), markdown);
                 });
-        }
-
-        private string BuildMarkdown(TypeModel type, int fileIndex, List<TypeModel> allTypes)
-        {
-            List<string> docParts = [];
-
-            if (configuration.IsDocusaurusProject)
-            {
-                docParts.Add(DocTemplates.Current.DocusaurusFrontMatter
-                    .Replace("{{SIDEBAR_LABEL}}", type.Name)
-                    .Replace("{{SIDEBAR_POSITION}}", fileIndex.ToString()));
-            }
-
-            docParts.Add(DocTemplates.Current.Header
-                .Replace("{{NAME}}", type.Name)
-                .Replace("{{TYPE}}", type.ObjectType)
-                .Replace("{{NAMESPACE}}", type.Namespace)
-                .Replace("{{ASSEMBLY}}", type.Assembly)
-                .Replace("{{DECLARATION}}", type.Declaration)
-                .Replace("{{SUMMARY}}", type.Summary));
-
-            if (type.TypeParameters.Count > 0)
-            {
-                var typeParams = string.Join(_separator, type.TypeParameters.Select(tp =>
-                    DocTemplates.Current.TypeParam
-                        .Replace("{{NAME}}", tp.Name)
-                        .Replace("{{DESCRIPTION}}", tp.Description)));
-
-                typeParams = DocTemplates.Current.TypeParams.Replace("{{PARAMS}}", typeParams);
-
-                docParts.Add(typeParams);
-            }
-
-            if (type.Remarks is not null)
-                docParts.Add(DocTemplates.Current.Remarks.Replace("{{REMARKS}}", type.Remarks));
-
-            if (type.Properties.Count > 0)
-            {
-                var properties = string.Join(Environment.NewLine, type.Properties.Select(p =>
-                {
-                    var propertyTypeReference = allTypes.FirstOrDefault(t => t.Name == p.Type.Name);
-                    var propertyTypeLink = TryGetDocLink(propertyTypeReference, currentNamespace: type.Namespace);
-                    var typeNameColumn = propertyTypeLink is not null ? $"[`{p.Type.Name}`]({propertyTypeLink})" : $"`{p.Type.Name}`";
-
-                    return $"| `{p.Name}` | {typeNameColumn} | {GetSafeMarkdownText(p.Type.Summary, isTableCell: true)} |";
-                }));
-                properties = DocTemplates.Current.Properties.Replace("{{PROPERTIES}}", properties);
-                docParts.Add(properties);
-            }
-
-            if (type.Methods.Count > 0)
-            {
-                var methods = string.Join(Environment.NewLine, type.Methods.Select(m =>
-                {
-                    return $"| `{m.GetSignature()}` | {GetSafeMarkdownText(m.Summary, isTableCell: true)} | {GetSafeMarkdownText(m.Returns, isTableCell: true)} |";
-                }));
-
-                methods = DocTemplates.Current.Methods.Replace("{{METHODS}}", methods);
-                docParts.Add(methods);
-            }
-
-            return string.Join(_separator, docParts);
-        }
-
-        private string TryGetDocLink(TypeModel type, string currentNamespace)
-        {
-            if (type is null)
-                return null;
-
-            var basePath = "./";
-            
-            if (configuration.ShouldCreateNamespaceFolders && type.Namespace != currentNamespace)
-                basePath = $"../{type.Namespace}/";
-
-            return $"{basePath}{GetSanitizedName(type.Name)}";
-        }
-
-        private static string GetSafeMarkdownText(string sourceText, bool isTableCell = false)
-        {
-            // Do proper transformations and escaping for safe markdown output
-            if (sourceText is null)
-                return null;
-
-            sourceText = ReplaceRegex(
-                new Regex(@"<paramref\sname\=\""(?<name>[^\""]+)\""\s?\/>", RegexOptions.Multiline),
-                sourceText,
-                "name",
-                name => $"`{name}`");
-
-            sourceText = ReplaceRegex(
-                new Regex(@"<c>(?<code>[^<]+)<\/c>", RegexOptions.Multiline),
-                sourceText,
-                "code",
-                code => $"`{code}`");
-
-            sourceText = ReplaceRegex(
-                new Regex(@"<para>(?<content>.*?)<\/para>", RegexOptions.Singleline),
-                sourceText,
-                "content",
-                content => content);
-
-            if (isTableCell)
-            {
-                // Cell text cannot start with or contain a newline. Trim and replace newlines with <br />
-                sourceText = sourceText
-                    .Trim()
-                    .Replace(Environment.NewLine, "<br />")
-                    .Replace("|", "\\|");
-            }
-
-            return sourceText.Trim();
-        }
-
-        private static string ReplaceRegex(Regex regex, string text, string groupName, Func<string, string> replacementGenerator)
-        {
-            regex
-                .Matches(text)
-                .OrderByDescending(m => m.Index)
-                .ToList()
-                .ForEach(match =>
-                {
-                    text = text
-                        .Remove(match.Index, match.Length)
-                        .Insert(match.Index, replacementGenerator(match.Groups[groupName].Value));
-                });
-
-            return text;
         }
 
         private static void CleanupOutputPath(string folder)
@@ -210,16 +92,6 @@ namespace PieroDeTomi.DotNetMd
             Directory.GetFiles(folder)
                 .ToList()
                 .ForEach(File.Delete);
-        }
-
-        private static string GetSanitizedName(string name)
-        {
-            return name.ToLower()
-                .Replace(" ", string.Empty)
-                .Replace(".", "-")
-                .Replace("<", "__")
-                .Replace(",", "__")
-                .Replace(">", "__");
         }
     }
 }

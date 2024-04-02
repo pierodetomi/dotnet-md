@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace PieroDeTomi.DotNetMd
+namespace PieroDeTomi.DotNetMd.Services
 {
     public class DocTemplates
     {

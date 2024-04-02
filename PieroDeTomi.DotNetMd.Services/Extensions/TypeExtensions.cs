@@ -1,7 +1,7 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Docs;
 using System.Xml;
 
-namespace PieroDeTomi.DotNetMd.Extensions
+namespace PieroDeTomi.DotNetMd.Services.Extensions
 {
     public static class TypeExtensions
     {

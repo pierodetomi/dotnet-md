@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace PieroDeTomi.DotNetMd.Extensions
+namespace PieroDeTomi.DotNetMd.Services.Extensions
 {
     public static class AssemblyExtensions
     {

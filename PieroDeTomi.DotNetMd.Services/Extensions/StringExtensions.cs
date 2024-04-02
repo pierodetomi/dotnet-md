@@ -1,4 +1,4 @@
-﻿namespace PieroDeTomi.DotNetMd.Extensions
+﻿namespace PieroDeTomi.DotNetMd.Services.Extensions
 {
     public static class StringExtensions
     {

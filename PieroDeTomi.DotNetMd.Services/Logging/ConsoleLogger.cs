@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace PieroDeTomi.DotNetMd
+namespace PieroDeTomi.DotNetMd.Services.Logging
 {
     internal class ConsoleLogger : ILogger
     {

@@ -1,43 +1,23 @@
 ﻿using Microsoft.Extensions.Logging;
 using PieroDeTomi.DotNetMd.Contracts.Docs;
-using PieroDeTomi.DotNetMd.Extensions;
+using PieroDeTomi.DotNetMd.Services.Extensions;
 using System.Reflection;
 using System.Xml;
 
-namespace PieroDeTomi.DotNetMd
+namespace PieroDeTomi.DotNetMd.Services.Parsers
 {
-    internal class AssemblyXmlDocParser(ILogger logger)
+    internal class AssemblyXmlDocParser(ILogger logger) : IAssemblyDocParser
     {
-        private Assembly _assembly;
-
-        private XmlDocument _xmlDocument;
-
-        public void LoadAssembly(string assemblyFilePath)
-        {
-            if (!File.Exists(assemblyFilePath))
-                throw new ApplicationException($"Assembly file {assemblyFilePath} does not exist.");
-
-            var xmlDocFilePath = GetXmlDocFilePathFromAssemblyFilePath(assemblyFilePath);
-
-            if (!File.Exists(xmlDocFilePath))
-                throw new ApplicationException($"The specified assembly file does not appear to have an XML documentation file at {xmlDocFilePath}.");
-
-            // Load the assembly
-            _assembly = Assembly.LoadFrom(assemblyFilePath);
-            
-            // Load the XML document
-            _xmlDocument = new XmlDocument();
-            _xmlDocument.Load(xmlDocFilePath);
-        }
-
-        public List<TypeModel> GetTypes()
+        public List<TypeModel> ParseTypes(string assemblyFilePath)
         {
             List<TypeModel> typeDescriptors = [];
 
-            _assembly.GetLoadableTypes().ForEach(type =>
+            var (assembly, xmlDocument) = LoadAssembly(assemblyFilePath);
+
+            assembly.GetLoadableTypes().ForEach(type =>
             {
                 var typeIdentifier = $"T:{type.FullName}";
-                var typeXmlNode = _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{typeIdentifier}']");
+                var typeXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{typeIdentifier}']");
 
                 if (typeXmlNode is null)
                     logger.LogWarning($"Unable to find XML documentation member for type {type.FullName}");
@@ -56,7 +36,7 @@ namespace PieroDeTomi.DotNetMd
                     .ForEach(propertyInfo =>
                     {
                         var propertyIdentifier = $"P:{propertyInfo.DeclaringType.FullName}.{propertyInfo.Name}";
-                        var propertyXmlNode = _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{propertyIdentifier}']");
+                        var propertyXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{propertyIdentifier}']");
 
                         logger.LogWarning($"Unable to find XML documentation node for property {propertyInfo.Name}");
 
@@ -80,7 +60,7 @@ namespace PieroDeTomi.DotNetMd
                     .ForEach(methodInfo =>
                     {
                         var methodIdentifier = GetMethodIdentifier(methodInfo);
-                        var methodXmlNode = methodIdentifier is not null ? _xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']") : null;
+                        var methodXmlNode = methodIdentifier is not null ? xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']") : null;
 
                         logger.LogWarning($"Unable to find XML documentation node for property {methodInfo.Name}");
 
@@ -99,6 +79,26 @@ namespace PieroDeTomi.DotNetMd
             });
 
             return typeDescriptors;
+        }
+
+        private (Assembly assembly, XmlDocument xmlDocument) LoadAssembly(string assemblyFilePath)
+        {
+            if (!File.Exists(assemblyFilePath))
+                throw new ApplicationException($"Assembly file {assemblyFilePath} does not exist.");
+
+            var xmlDocFilePath = GetXmlDocFilePathFromAssemblyFilePath(assemblyFilePath);
+
+            if (!File.Exists(xmlDocFilePath))
+                throw new ApplicationException($"The specified assembly file does not appear to have an XML documentation file at {xmlDocFilePath}.");
+
+            // Load the assembly
+            var assembly = Assembly.LoadFrom(assemblyFilePath);
+
+            // Load the XML document
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(xmlDocFilePath);
+
+            return (assembly, xmlDocument);
         }
 
         private static string GetXmlDocFilePathFromAssemblyFilePath(string assemblyFilePath)
