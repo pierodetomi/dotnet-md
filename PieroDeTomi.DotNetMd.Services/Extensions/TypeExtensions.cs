@@ -11,6 +11,7 @@ namespace PieroDeTomi.DotNetMd.Services.Extensions
             {
                 var descriptor = new TypeModel
                 {
+                    InheritanceChain = type.GetInheritanceChain(),
                     ObjectType = type.IsClass ? "class" : type.IsInterface ? "interface" : type.IsEnum ? "enum" : "struct",
                     Declaration = type.GetDeclaration(),
                     Name = type.GetDisplayName(),
@@ -79,6 +80,21 @@ namespace PieroDeTomi.DotNetMd.Services.Extensions
                 declaration = declaration.Replace(" : ", string.Empty);
 
             return declaration;
+        }
+
+        public static List<string> GetInheritanceChain(this Type type)
+        {
+            List<string> chain = [];
+
+            var currentType = type;
+
+            while (currentType.BaseType is not null)
+            {
+                chain.Add(currentType.BaseType.GetDisplayName());
+                currentType = currentType.BaseType;
+            }
+
+            return chain;
         }
     }
 }

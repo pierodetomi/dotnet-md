@@ -5,7 +5,7 @@ using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
 using PieroDeTomi.DotNetMd.Contracts.Services.Parsers;
 using PieroDeTomi.DotNetMd.Services.Extensions;
 
-namespace PieroDeTomi.DotNetMd
+namespace PieroDeTomi.DotNetMd.Services
 {
     internal class DotNetMdTool : IEntryPoint
     {

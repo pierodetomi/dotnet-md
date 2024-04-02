@@ -1,0 +1,3 @@
+﻿## Inheritance
+
+{{INHERITANCE}}

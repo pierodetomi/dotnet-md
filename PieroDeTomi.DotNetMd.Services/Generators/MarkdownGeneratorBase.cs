@@ -1,11 +1,18 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Services.Generators.Default;
 using System.Text.RegularExpressions;
 
 namespace PieroDeTomi.DotNetMd.Services.Generators
 {
     internal class MarkdownGeneratorBase
     {
+        private readonly Regex _paramrefRegEx = new(@"<paramref\sname\=\""(?<name>[^\""]+)\""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _inlineCodeRegEx = new(@"<c>(?<code>[^<]+)<\/c>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _paragraphRegEx = new(@"<para>(?<content>.*?)<\/para>", RegexOptions.Compiled | RegexOptions.Singleline);
+
         protected DocGenerationRuntimeConfig Configuration { get; private set; }
 
         public MarkdownGeneratorBase(DocGenerationRuntimeConfig configuration)
@@ -27,10 +34,10 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
         {
             var filePath = Path.Combine(folderPath, "_category_.json");
 
-            var content = DocTemplates.Current.DocusaurusCategory
-                .Replace("{{LABEL}}", label)
-                .Replace("{{POSITION}}", position.ToString())
-                .Replace("{{DESCRIPTION}}", description ?? label);
+            var content = DefaultTemplatesProvider.Current.DocusaurusCategory
+                .Replace(TemplateTokens.LABEL, label)
+                .Replace(TemplateTokens.POSITION, position.ToString())
+                .Replace(TemplateTokens.DESCRIPTION, description ?? label);
 
             File.WriteAllText(filePath, content);
         }
@@ -55,19 +62,22 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
                 return null;
 
             sourceText = ReplaceRegex(
-                new Regex(@"<paramref\sname\=\""(?<name>[^\""]+)\""\s?\/>", RegexOptions.Multiline),
+                // new Regex(@"<paramref\sname\=\""(?<name>[^\""]+)\""\s?\/>", RegexOptions.Multiline),
+                _paramrefRegEx,
                 sourceText,
                 "name",
                 name => $"`{name}`");
 
             sourceText = ReplaceRegex(
-                new Regex(@"<c>(?<code>[^<]+)<\/c>", RegexOptions.Multiline),
+                // new Regex(@"<c>(?<code>[^<]+)<\/c>", RegexOptions.Multiline),
+                _inlineCodeRegEx,
                 sourceText,
                 "code",
                 code => $"`{code}`");
 
             sourceText = ReplaceRegex(
-                new Regex(@"<para>(?<content>.*?)<\/para>", RegexOptions.Singleline),
+                // new Regex(@"<para>(?<content>.*?)<\/para>", RegexOptions.Singleline),
+                _paragraphRegEx,
                 sourceText,
                 "content",
                 content => content);

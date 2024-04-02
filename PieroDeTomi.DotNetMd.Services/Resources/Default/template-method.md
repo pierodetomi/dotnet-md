@@ -1,0 +1,7 @@
+﻿### {{NAME}}
+
+{{SUMMARY}}
+
+```cs
+{{DECLARATION}}
+```

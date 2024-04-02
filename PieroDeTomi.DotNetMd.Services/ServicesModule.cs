@@ -5,7 +5,8 @@ using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 using PieroDeTomi.DotNetMd.Contracts.Services.Parsers;
 using PieroDeTomi.DotNetMd.Services.Emitters;
-using PieroDeTomi.DotNetMd.Services.Generators;
+using PieroDeTomi.DotNetMd.Services.Generators.Default;
+using PieroDeTomi.DotNetMd.Services.Generators.Microsoft;
 using PieroDeTomi.DotNetMd.Services.Logging;
 using PieroDeTomi.DotNetMd.Services.Parsers;
 
@@ -23,11 +24,11 @@ namespace PieroDeTomi.DotNetMd.Services
             switch (outputStyle)
             {
                 case OutputStyles.Default:
-                    services.AddScoped<IMarkdownDocsGenerator, MsDocsStyleGenerator>();
+                    services.AddScoped<IMarkdownDocsGenerator, DefaultGenerator>();
                     break;
 
                 case OutputStyles.Microsoft:
-                    services.AddScoped<IMarkdownDocsGenerator, MsDocsStyleGenerator>();
+                    services.AddScoped<IMarkdownDocsGenerator, MsDocsGenerator>();
                     break;
 
                 default:

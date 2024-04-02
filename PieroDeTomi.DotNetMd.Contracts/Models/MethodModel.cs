@@ -10,6 +10,8 @@
 
         public List<ParamModel> Parameters { get; set; } = [];
 
+        public bool HasParameters => Parameters.Count > 0;
+
         public string GetSignature()
         {
             var returnType = ReturnType.Name == "Void" ? string.Empty : $"{ReturnType.Name} ";
