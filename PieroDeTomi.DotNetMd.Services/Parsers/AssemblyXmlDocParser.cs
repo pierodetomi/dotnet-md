@@ -46,7 +46,8 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                         var propertyIdentifier = $"P:{propertyInfo.DeclaringType.FullName}.{propertyInfo.Name}";
                         var propertyXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{propertyIdentifier}']");
 
-                        _logger.LogWarning($"Unable to find XML documentation node for property {propertyInfo.Name}");
+                        if (propertyXmlNode is null)
+                            _logger.LogWarning($"Unable to find XML documentation node for property {propertyInfo.Name}");
 
                         try
                         {
@@ -70,7 +71,8 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                         var methodIdentifier = GetMethodIdentifier(methodInfo);
                         var methodXmlNode = methodIdentifier is not null ? xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']") : null;
 
-                        _logger.LogWarning($"Unable to find XML documentation node for property {methodInfo.Name}");
+                        if (methodXmlNode is null)
+                            _logger.LogWarning($"Unable to find XML documentation node for method {methodInfo.Name}");
 
                         var model = methodInfo.ToMethodModel(methodXmlNode);
                         
