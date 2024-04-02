@@ -8,7 +8,7 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
     {
         private static readonly string _separator = $"{Environment.NewLine}{Environment.NewLine}";
 
-        public MsDocsStyleGenerator(DocGenerationConfig configuration) : base(configuration) { }
+        public MsDocsStyleGenerator(DocGenerationRuntimeConfig configuration) : base(configuration) { }
 
         public string BuildMarkdown(TypeModel type, List<TypeModel> allTypes)
         {

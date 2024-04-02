@@ -9,10 +9,6 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
-        // Setup DI container
-        var services = new ServiceCollection();
-        DIModule.RegisterServices(services);
-
         var configurationOption = new Option<FileInfo>(
             name: "--config",
             description: "The configuration file to use for parsing & generation");
@@ -22,27 +18,51 @@ class Program
 
         rootCommand.SetHandler(configurationFile =>
         {
-
-#if DEBUG
-            configurationFile ??= new FileInfo(@"..\..\..\..\_assets\dotnetmd.json");
-#else
-            configurationFile.ThrowIfNull("Configuration file is required");
-#endif
-
-            if (!File.Exists(configurationFile.FullName))
-                throw new FileNotFoundException("Configuration file not found", configurationFile.FullName);
-
-            var configuration = JsonConvert.DeserializeObject<DocGenerationConfig>(File.ReadAllText(configurationFile.FullName));
-            services.AddScoped(p => configuration);
-            
-            var serviceProvider = services.BuildServiceProvider();
-            
-            var tool = new DotNetMdTool(configurationFile.FullName, serviceProvider);
-
-            tool.Run();
+            BuildServiceProvider(configurationFile)
+                .GetRequiredService<DotNetMdTool>()
+                .Run();
         },
         configurationOption);
 
         return await rootCommand.InvokeAsync(args);
+    }
+
+    private static DocGenerationRuntimeConfig GetRuntimeConfiguration(string configFilePath, DocGenerationConfig configuration)
+    {
+        var absoluteConfigFilePath = Path.IsPathFullyQualified(configFilePath) ? configFilePath : Path.GetFullPath(configFilePath);
+
+        return new DocGenerationRuntimeConfig
+        {
+            Assemblies = configuration.Assemblies,
+            OutputPath = configuration.OutputPath,
+            IsDocusaurusProject = configuration.IsDocusaurusProject,
+            OutputStyle = configuration.OutputStyle,
+            ShouldCreateNamespaceFolders = configuration.ShouldCreateNamespaceFolders,
+            BasePath = Path.GetDirectoryName(absoluteConfigFilePath)
+        };
+    }
+
+    private static IServiceProvider BuildServiceProvider(FileInfo configurationFile)
+    {
+#if DEBUG
+        configurationFile ??= new FileInfo(@"..\..\..\..\_assets\dotnetmd.json");
+#else
+        configurationFile.ThrowIfNull("Configuration file is required");
+#endif
+
+        if (!File.Exists(configurationFile.FullName))
+            throw new FileNotFoundException("Configuration file not found", configurationFile.FullName);
+
+        var configuration = JsonConvert.DeserializeObject<DocGenerationConfig>(File.ReadAllText(configurationFile.FullName));
+        var runtimeConfiguration = GetRuntimeConfiguration(configurationFile.FullName, configuration);
+
+        // Setup DI container
+        var services = new ServiceCollection();
+        services.AddScoped(p => runtimeConfiguration);
+        services.AddScoped<DotNetMdTool>();
+        
+        DIModule.RegisterServices(services);
+
+        return services.BuildServiceProvider();
     }
 }

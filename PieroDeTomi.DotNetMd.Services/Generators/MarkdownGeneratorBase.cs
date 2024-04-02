@@ -6,9 +6,9 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
 {
     internal class MarkdownGeneratorBase
     {
-        protected DocGenerationConfig Configuration { get; private set; }
+        protected DocGenerationRuntimeConfig Configuration { get; private set; }
 
-        public MarkdownGeneratorBase(DocGenerationConfig configuration)
+        public MarkdownGeneratorBase(DocGenerationRuntimeConfig configuration)
         {
             Configuration = configuration;
         }

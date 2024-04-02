@@ -9,7 +9,7 @@ namespace PieroDeTomi.DotNetMd
 {
     public class DocGenerator
     {
-        private readonly DocGenerationConfig _configuration;
+        private readonly DocGenerationRuntimeConfig _configuration;
 
         private readonly ILogger _logger;
 
@@ -17,14 +17,14 @@ namespace PieroDeTomi.DotNetMd
 
         public DocGenerator(IServiceProvider serviceProvider)
         {
-            _configuration = serviceProvider.GetRequiredService<DocGenerationConfig>();
+            _configuration = serviceProvider.GetRequiredService<DocGenerationRuntimeConfig>();
             _logger = serviceProvider.GetRequiredService<ILogger>();
             _generator = serviceProvider.GetRequiredKeyedService<IMarkdownDocsGenerator>(_configuration.OutputStyle);
         }
 
-        public void GenerateDocs(string basePath, List<TypeModel> types)
+        public void GenerateDocs(List<TypeModel> types)
         {
-            var outputFolder = _configuration.OutputPath.MakeAbsolute(basePath);
+            var outputFolder = _configuration.OutputPath.MakeAbsolute(_configuration.BasePath);
 
             CleanupOutputPath(outputFolder);
 
