@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Nelibur.ObjectMapper;
 using Newtonsoft.Json;
 using PieroDeTomi.DotNetMd;
 using PieroDeTomi.DotNetMd.Contracts.Config;
@@ -27,19 +28,22 @@ class Program
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static DocGenerationRuntimeConfig GetRuntimeConfiguration(string configFilePath, DocGenerationConfig configuration)
+    private static DocGenerationRuntimeConfig GetRuntimeConfiguration(FileInfo configurationFile)
     {
-        var absoluteConfigFilePath = Path.IsPathFullyQualified(configFilePath) ? configFilePath : Path.GetFullPath(configFilePath);
+        if (!File.Exists(configurationFile.FullName))
+            throw new FileNotFoundException("Configuration file not found", configurationFile.FullName);
 
-        return new DocGenerationRuntimeConfig
-        {
-            Assemblies = configuration.Assemblies,
-            OutputPath = configuration.OutputPath,
-            IsDocusaurusProject = configuration.IsDocusaurusProject,
-            OutputStyle = configuration.OutputStyle,
-            ShouldCreateNamespaceFolders = configuration.ShouldCreateNamespaceFolders,
-            BasePath = Path.GetDirectoryName(absoluteConfigFilePath)
-        };
+        TinyMapper.Bind<DocGenerationConfig, DocGenerationRuntimeConfig>();
+
+        var configFilePath = configurationFile.FullName;
+        var configuration = JsonConvert.DeserializeObject<DocGenerationConfig>(File.ReadAllText(configFilePath));
+        
+        var runtimeConfiguration = TinyMapper.Map<DocGenerationRuntimeConfig>(configuration);
+        
+        var absoluteConfigFilePath = Path.IsPathFullyQualified(configFilePath) ? configFilePath : Path.GetFullPath(configFilePath);
+        runtimeConfiguration.BasePath = Path.GetDirectoryName(absoluteConfigFilePath);
+
+        return runtimeConfiguration;
     }
 
     private static IServiceProvider BuildServiceProvider(FileInfo configurationFile)
@@ -50,14 +54,10 @@ class Program
         configurationFile.ThrowIfNull("Configuration file is required");
 #endif
 
-        if (!File.Exists(configurationFile.FullName))
-            throw new FileNotFoundException("Configuration file not found", configurationFile.FullName);
+        var runtimeConfiguration = GetRuntimeConfiguration(configurationFile);
 
-        var configuration = JsonConvert.DeserializeObject<DocGenerationConfig>(File.ReadAllText(configurationFile.FullName));
-        var runtimeConfiguration = GetRuntimeConfiguration(configurationFile.FullName, configuration);
-
-        // Setup DI container
         var services = new ServiceCollection();
+
         services.AddScoped(p => runtimeConfiguration);
         services.AddScoped<DotNetMdTool>();
         
