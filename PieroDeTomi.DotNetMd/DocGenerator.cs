@@ -164,21 +164,18 @@ namespace PieroDeTomi.DotNetMd
                 new Regex(@"<para>(?<content>.*?)<\/para>", RegexOptions.Singleline),
                 sourceText,
                 "content",
-                content => $"{Environment.NewLine}{content}{Environment.NewLine}");
-
-            sourceText = sourceText.Replace("|", @"\|");
+                content => content);
 
             if (isTableCell)
             {
                 // Cell text cannot start with or contain a newline. Trim and replace newlines with <br />
                 sourceText = sourceText
                     .Trim()
-                    .Replace(Environment.NewLine, "<br />");
-
-                // TODO: Escape markdown table cell pipes
+                    .Replace(Environment.NewLine, "<br />")
+                    .Replace("|", "\\|");
             }
 
-            return sourceText;
+            return sourceText.Trim();
         }
 
         private static string ReplaceRegex(Regex regex, string text, string groupName, Func<string, string> replacementGenerator)
