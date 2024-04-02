@@ -30,7 +30,7 @@ The configuration is a JSON file that must follow this structure:
 |---------------|------|---------|-------------|
 | `assemblies` | `string[]` | Required | An array of paths to the assemblies to be documented |
 | `outputPath` | `string` | Optional<br /><br />Default: `".\docs"` | The path to the output directory where the Markdown files will be generated |
-| `outputStyle` | `"default" | "microsoft"` | Optional<br /><br />Default: `"default"` | The "theme" that will be used to generate the documentation. `default` will use a default/simpler documentation style, while `microsoft` will use an output style similar to the one used by the Microsoft Docs |
+| `outputStyle` | `"default" \| "microsoft"` | Optional<br /><br />Default: `"default"` | The "theme" that will be used to generate the documentation. `default` will use a default/simpler documentation style, while `microsoft` will use an output style similar to the one used by the Microsoft Docs |
 | `shouldCreateNamespaceFolders` | `boolean` | Optional<br /><br />Default: `true` | If `true`, the tool will create a folder for each namespace in the output directory, and will place the generated Markdown files in the corresponding folder. If `false`, all the files will be placed in the root of the output directory |
 | `isDocusaurusProject` | `boolean` | Optional<br /><br />Default: `false` | If `true`, the tool will include Docusaurus front-matter in the Markdown files and will generate `_category_.json` files inside the folders, in order to make the integration in a Docusaurus project some kind of "copy/paste" process. If `false`, nothing will change in the generation process |
 
