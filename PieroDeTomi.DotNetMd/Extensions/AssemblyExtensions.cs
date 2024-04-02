@@ -6,12 +6,11 @@ namespace PieroDeTomi.DotNetMd.Extensions
     {
         public static List<Type> GetLoadableTypes(this Assembly assembly)
         {
-            if (assembly is null)
-                throw new ArgumentNullException(nameof(assembly));
+            ArgumentNullException.ThrowIfNull(assembly);
 
             try
             {
-                return [.. assembly.GetTypes()];
+                return assembly.GetTypes().ToList();
             }
             catch (ReflectionTypeLoadException e)
             {

@@ -10,6 +10,8 @@ namespace PieroDeTomi.DotNetMd
 
         public void GenerateDocs(List<TypeModel> types)
         {
+            CleanupOutputPath();
+
             var currentNamespace = string.Empty;
             var namespaceCount = 0;
             var currentFileIndex = 0;
@@ -57,14 +59,32 @@ namespace PieroDeTomi.DotNetMd
                         targetFolder = namespaceFolderPath;
                     }
 
-                    var markdown = BuildMarkdown(type, currentFileIndex);
+                    var markdown = BuildMarkdown(type, currentFileIndex, types);
                     var targetFileName = $"{GetSanitizedName(type.Name)}.md";
 
                     File.WriteAllText(Path.Combine(targetFolder, targetFileName), markdown);
                 });
         }
 
-        private string BuildMarkdown(TypeModel type, int fileIndex)
+        private void CleanupOutputPath()
+        {
+            if (!Directory.Exists(configuration.OutputPath))
+            {
+                Directory.CreateDirectory(configuration.OutputPath);
+                return;
+            }
+
+            Directory
+                .GetDirectories(configuration.OutputPath)
+                .ToList()
+                .ForEach(directory => Directory.Delete(directory, recursive: true));
+
+            Directory.GetFiles(configuration.OutputPath)
+                .ToList()
+                .ForEach(File.Delete);
+        }
+
+        private string BuildMarkdown(TypeModel type, int fileIndex, List<TypeModel> allTypes)
         {
             List<string> docParts = [];
 
@@ -100,7 +120,14 @@ namespace PieroDeTomi.DotNetMd
 
             if (type.Properties.Count > 0)
             {
-                var properties = string.Join(Environment.NewLine, type.Properties.Select(p => $"| `{p.Name}` | `{p.Type.Name}` | {p.Type.Summary} |"));
+                var properties = string.Join(Environment.NewLine, type.Properties.Select(p =>
+                {
+                    var propertyTypeReference = allTypes.FirstOrDefault(t => t.Name == p.Type.Name);
+                    var propertyTypeLink = TryGetDocLink(propertyTypeReference, currentNamespace: type.Namespace);
+                    var typeNameColumn = propertyTypeLink is not null ? $"[`{p.Type.Name}`]({propertyTypeLink})" : $"`{p.Type.Name}`";
+
+                    return $"| `{p.Name}` | {typeNameColumn} | {p.Type.Summary} |";
+                }));
                 properties = DocTemplates.Current.Properties.Replace("{{PROPERTIES}}", properties);
                 docParts.Add(properties);
             }
@@ -117,6 +144,19 @@ namespace PieroDeTomi.DotNetMd
             }
 
             return string.Join(_separator, docParts);
+        }
+
+        private string TryGetDocLink(TypeModel type, string currentNamespace)
+        {
+            if (type is null)
+                return null;
+
+            var basePath = "./";
+            
+            if (configuration.ShouldCreateNamespaceFolders && type.Namespace != currentNamespace)
+                basePath = $"../{type.Namespace}/";
+
+            return $"{basePath}{GetSanitizedName(type.Name)}";
         }
 
         private static string GetSanitizedName(string name)

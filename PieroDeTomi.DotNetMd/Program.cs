@@ -1,21 +1,31 @@
 ﻿using PieroDeTomi.DotNetMd;
+using System.CommandLine;
 
-//const int expectedArgsCount = 1;
+class Program
+{
+    static async Task<int> Main(string[] args)
+    {
+        var configurationOption = new Option<FileInfo>(
+            name: "--config",
+            description: "The configuration file to use for parsing & generation");
 
-//if (args.Length < expectedArgsCount)
-//{
-//    Console.ForegroundColor = ConsoleColor.Red;
-//    Console.WriteLine("Invalid arguments");
-//    return;
-//}
+        var rootCommand = new RootCommand("DotNetMd is a simple tool for generating Markdown docs from .NET assemblies");
+        rootCommand.AddOption(configurationOption);
 
-//var assemblyFilePath = args[0];
-var configFilePath = @"..\..\..\..\_assets\dotnetmd.json";
+        rootCommand.SetHandler(configurationFile =>
+        {
+            configurationFile ??= new FileInfo(@"..\..\..\..\_assets\dotnetmd.json");
 
-var logger = new ConsoleLogger();
-var tool = new DotNetMdTool(configFilePath, logger);
+            var logger = new ConsoleLogger();
+            var tool = new DotNetMdTool(configurationFile.FullName, logger);
 
-tool.Run();
+            tool.Run();
 
-Console.WriteLine($"{Environment.NewLine}Generation completed. Press any key to exit ...");
-Console.ReadKey();
+            Console.WriteLine($"{Environment.NewLine}Generation completed. Press any key to exit ...");
+            Console.ReadKey();
+        },
+        configurationOption);
+
+        return await rootCommand.InvokeAsync(args);
+    }
+}

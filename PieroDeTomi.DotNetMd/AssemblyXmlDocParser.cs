@@ -83,19 +83,6 @@ namespace PieroDeTomi.DotNetMd
             return typeDescriptors;
         }
 
-        private string GetTypeDisplayName(Type type)
-        {
-            if (!type.IsGenericType)
-                return type.Name;
-
-            var genericType = type.GetGenericTypeDefinition();
-            
-            var nameWithoutArguments = genericType.Name.Substring(0, genericType.Name.IndexOf('`'));
-            var typeArguments = string.Join(",", type.GetGenericArguments().Select(GetTypeDisplayName));
-
-            return $"{nameWithoutArguments}<{typeArguments}>";
-        }
-
         private static string GetXmlDocFilePathFromAssemblyFilePath(string assemblyFilePath)
         {
             var xmlFilePath = Path.GetDirectoryName(assemblyFilePath);

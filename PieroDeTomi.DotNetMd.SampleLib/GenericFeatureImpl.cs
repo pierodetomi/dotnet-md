@@ -16,7 +16,7 @@ namespace PieroDeTomi.DotNetMd.SampleLib
         /// <summary>
         /// This is some method
         /// </summary>
-        /// <param name="input">The person is passed as input</param>
+        /// <param name="input">The <see cref="Person"/> is passed as input</param>
         public void SomeMethod(Person input)
         {
             // Do something
