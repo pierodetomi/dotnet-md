@@ -1,6 +1,6 @@
-﻿using PieroDeTomi.DotNetMd.Contracts;
-using PieroDeTomi.DotNetMd.Contracts.Config;
-using PieroDeTomi.DotNetMd.Contracts.Docs;
+﻿using PieroDeTomi.DotNetMd.Contracts.Models;
+using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 
 namespace PieroDeTomi.DotNetMd.Services.Generators
 {

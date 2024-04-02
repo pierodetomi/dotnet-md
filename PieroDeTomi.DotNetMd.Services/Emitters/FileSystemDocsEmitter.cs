@@ -1,28 +1,28 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using PieroDeTomi.DotNetMd.Contracts;
-using PieroDeTomi.DotNetMd.Contracts.Config;
-using PieroDeTomi.DotNetMd.Contracts.Docs;
+﻿using Microsoft.Extensions.Logging;
+using PieroDeTomi.DotNetMd.Contracts.Models;
+using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
+using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 using PieroDeTomi.DotNetMd.Services.Extensions;
 
-namespace PieroDeTomi.DotNetMd
+namespace PieroDeTomi.DotNetMd.Services.Emitters
 {
-    public class DocGenerator
+    internal class FileSystemDocsEmitter : IDocsEmitter
     {
         private readonly DocGenerationRuntimeConfig _configuration;
 
+        private readonly IMarkdownDocsGenerator _generator;
+        
         private readonly ILogger _logger;
 
-        private readonly IMarkdownDocsGenerator _generator;
-
-        public DocGenerator(IServiceProvider serviceProvider)
+        public FileSystemDocsEmitter(DocGenerationRuntimeConfig configuration, IMarkdownDocsGenerator generator, ILogger logger)
         {
-            _configuration = serviceProvider.GetRequiredService<DocGenerationRuntimeConfig>();
-            _logger = serviceProvider.GetRequiredService<ILogger>();
-            _generator = serviceProvider.GetRequiredKeyedService<IMarkdownDocsGenerator>(_configuration.OutputStyle);
+            _configuration = configuration;
+            _generator = generator;
+            _logger = logger;
         }
 
-        public void GenerateDocs(List<TypeModel> types)
+        public void Emit(List<TypeModel> types)
         {
             var outputFolder = _configuration.OutputPath.MakeAbsolute(_configuration.BasePath);
 

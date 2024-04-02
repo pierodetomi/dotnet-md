@@ -1,5 +1,5 @@
-﻿using PieroDeTomi.DotNetMd.Contracts.Config;
-using PieroDeTomi.DotNetMd.Contracts.Docs;
+﻿using PieroDeTomi.DotNetMd.Contracts.Models;
+using PieroDeTomi.DotNetMd.Contracts.Models.Config;
 using System.Text.RegularExpressions;
 
 namespace PieroDeTomi.DotNetMd.Services.Generators

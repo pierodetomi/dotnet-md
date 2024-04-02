@@ -1,4 +1,4 @@
-﻿namespace PieroDeTomi.DotNetMd.Contracts.Docs
+﻿namespace PieroDeTomi.DotNetMd.Contracts.Models
 {
     public class PropertyModel
     {

@@ -1,4 +1,4 @@
-﻿using PieroDeTomi.DotNetMd.Contracts.Docs;
+﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using System.Reflection;
 using System.Xml;
 

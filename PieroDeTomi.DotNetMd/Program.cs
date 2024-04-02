@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Nelibur.ObjectMapper;
 using Newtonsoft.Json;
-using PieroDeTomi.DotNetMd;
-using PieroDeTomi.DotNetMd.Contracts.Config;
+using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Contracts.Services;
 using PieroDeTomi.DotNetMd.Services;
 using System.CommandLine;
 
@@ -20,7 +20,7 @@ class Program
         rootCommand.SetHandler(configurationFile =>
         {
             BuildServiceProvider(configurationFile)
-                .GetRequiredService<DotNetMdTool>()
+                .GetRequiredService<IEntryPoint>()
                 .Run();
         },
         configurationOption);
@@ -59,9 +59,7 @@ class Program
         var services = new ServiceCollection();
 
         services.AddScoped(p => runtimeConfiguration);
-        services.AddScoped<DotNetMdTool>();
-        
-        DIModule.RegisterServices(services);
+        services.RegisterServices(runtimeConfiguration.OutputStyle);
 
         return services.BuildServiceProvider();
     }

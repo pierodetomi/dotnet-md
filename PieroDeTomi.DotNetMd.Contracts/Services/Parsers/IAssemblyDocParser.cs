@@ -1,4 +1,6 @@
-﻿namespace PieroDeTomi.DotNetMd.Contracts.Docs
+﻿using PieroDeTomi.DotNetMd.Contracts.Models;
+
+namespace PieroDeTomi.DotNetMd.Contracts.Services.Parsers
 {
     public interface IAssemblyDocParser
     {

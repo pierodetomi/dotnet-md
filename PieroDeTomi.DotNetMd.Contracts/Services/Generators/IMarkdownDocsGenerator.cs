@@ -1,6 +1,6 @@
-﻿using PieroDeTomi.DotNetMd.Contracts.Docs;
+﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 
-namespace PieroDeTomi.DotNetMd.Contracts
+namespace PieroDeTomi.DotNetMd.Contracts.Services.Generators
 {
     public interface IMarkdownDocsGenerator
     {

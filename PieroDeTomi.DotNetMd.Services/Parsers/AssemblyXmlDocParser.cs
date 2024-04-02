@@ -1,13 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
-using PieroDeTomi.DotNetMd.Contracts.Docs;
+using PieroDeTomi.DotNetMd.Contracts.Models;
+using PieroDeTomi.DotNetMd.Contracts.Services.Parsers;
 using PieroDeTomi.DotNetMd.Services.Extensions;
 using System.Reflection;
 using System.Xml;
 
 namespace PieroDeTomi.DotNetMd.Services.Parsers
 {
-    internal class AssemblyXmlDocParser(ILogger logger) : IAssemblyDocParser
+    internal class AssemblyXmlDocParser : IAssemblyDocParser
     {
+        private readonly ILogger _logger;
+
+        public AssemblyXmlDocParser(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         public List<TypeModel> ParseTypes(string assemblyFilePath)
         {
             List<TypeModel> typeDescriptors = [];
@@ -20,13 +28,13 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                 var typeXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{typeIdentifier}']");
 
                 if (typeXmlNode is null)
-                    logger.LogWarning($"Unable to find XML documentation member for type {type.FullName}");
+                    _logger.LogWarning($"Unable to find XML documentation member for type {type.FullName}");
 
                 var typeDescriptor = type.ToTypeModel(typeXmlNode);
 
                 if (typeDescriptor is null)
                 {
-                    logger.LogError($"Unable to create type model for type {type.FullName}");
+                    _logger.LogError($"Unable to create type model for type {type.FullName}");
                     return;
                 }
 
@@ -38,7 +46,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                         var propertyIdentifier = $"P:{propertyInfo.DeclaringType.FullName}.{propertyInfo.Name}";
                         var propertyXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{propertyIdentifier}']");
 
-                        logger.LogWarning($"Unable to find XML documentation node for property {propertyInfo.Name}");
+                        _logger.LogWarning($"Unable to find XML documentation node for property {propertyInfo.Name}");
 
                         try
                         {
@@ -50,7 +58,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                         }
                         catch (Exception ex)
                         {
-                            logger.LogError(ex, $"Unable to create property model for property {propertyInfo.Name} in type {type.Name}");
+                            _logger.LogError(ex, $"Unable to create property model for property {propertyInfo.Name} in type {type.Name}");
                         }
                     });
 
@@ -62,13 +70,13 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                         var methodIdentifier = GetMethodIdentifier(methodInfo);
                         var methodXmlNode = methodIdentifier is not null ? xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']") : null;
 
-                        logger.LogWarning($"Unable to find XML documentation node for property {methodInfo.Name}");
+                        _logger.LogWarning($"Unable to find XML documentation node for property {methodInfo.Name}");
 
                         var model = methodInfo.ToMethodModel(methodXmlNode);
                         
                         if (model is null)
                         {
-                            logger.LogError($"Unable to create method model for method {methodInfo.Name}");
+                            _logger.LogError($"Unable to create method model for method {methodInfo.Name}");
                             return;
                         }
                             
@@ -120,7 +128,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
             }
             catch(Exception ex)
             {
-                logger.LogError(ex, $"Error constructing method identifier for method {methodInfo.Name}");
+                _logger.LogError(ex, $"Error constructing method identifier for method {methodInfo.Name}");
                 return null;
             }
         }
@@ -146,7 +154,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
             }
             catch(Exception ex)
             {
-                logger.LogError(ex, $"Error constructing parameter identifier for type {parameterType.FullName}");
+                _logger.LogError(ex, $"Error constructing parameter identifier for type {parameterType.FullName}");
                 return null;
             }
         }

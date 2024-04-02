@@ -1,4 +1,4 @@
-﻿namespace PieroDeTomi.DotNetMd.Contracts.Config
+﻿namespace PieroDeTomi.DotNetMd.Contracts.Models.Config
 {
     public class DocGenerationRuntimeConfig : DocGenerationConfig
     {
