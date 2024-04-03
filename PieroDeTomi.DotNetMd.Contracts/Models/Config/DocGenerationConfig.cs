@@ -11,5 +11,7 @@
         public bool ShouldCreateNamespaceFolders { get; set; } = true;
 
         public bool IsDocusaurusProject { get; set; } = false;
+
+        public DocusaurusOptions DocusaurusOptions { get; set; }
     }
 }

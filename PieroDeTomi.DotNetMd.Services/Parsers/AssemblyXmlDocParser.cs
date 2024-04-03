@@ -54,7 +54,8 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                             typeDescriptor.Properties.Add(new PropertyModel
                             {
                                 Name = propertyInfo.Name,
-                                Type = propertyInfo.PropertyType.ToTypeModel(propertyXmlNode)
+                                Type = propertyInfo.PropertyType.ToTypeModel(propertyXmlNode),
+                                Declaration = propertyInfo.GetDeclaration()
                             });
                         }
                         catch (Exception ex)

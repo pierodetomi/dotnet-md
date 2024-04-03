@@ -4,6 +4,7 @@ using PieroDeTomi.DotNetMd.Contracts.Models.Config;
 using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 using PieroDeTomi.DotNetMd.Services.Extensions;
+using PieroDeTomi.DotNetMd.Services.Generators.Microsoft;
 
 namespace PieroDeTomi.DotNetMd.Services.Emitters
 {
@@ -64,12 +65,26 @@ namespace PieroDeTomi.DotNetMd.Services.Emitters
                             Directory.CreateDirectory(namespaceFolderPath);
 
                         if (isNewNamespace && _configuration.IsDocusaurusProject)
-                            _generator.WriteDocusaurusCategoryFile(namespaceFolderPath, type.Namespace, namespaceCount, $"{type.Namespace} namespace documentation");
+                        {
+                            var label = type.Namespace;
+
+                            if (_configuration.DocusaurusOptions?.PartialNamespaceAliasForLabels?.Length > 0)
+                                label = label.Replace($"{_configuration.DocusaurusOptions.PartialNamespaceAliasForLabels}.", string.Empty);
+
+                            _generator.WriteDocusaurusCategoryFile(namespaceFolderPath, label, namespaceCount, $"{type.Namespace} namespace documentation");
+                        }
 
                         targetFolder = namespaceFolderPath;
                     }
 
-                    var markdown = _generator.BuildMarkdown(type, types);
+                    var markdown = string.Empty;
+
+                    if (_configuration.IsDocusaurusProject)
+                        markdown = MsDocsTemplatesProvider.Current.DocusaurusFrontMatter
+                            .Replace("{{SIDEBAR_LABEL}}", type.Name)
+                            .Replace("{{SIDEBAR_POSITION}}", currentFileIndex.ToString());
+
+                    markdown += _generator.BuildMarkdown(type, types);
                     var targetFileName = $"{_generator.GetSanitizedFileName(type.Name)}.md";
 
                     File.WriteAllText(Path.Combine(targetFolder, targetFileName), markdown);

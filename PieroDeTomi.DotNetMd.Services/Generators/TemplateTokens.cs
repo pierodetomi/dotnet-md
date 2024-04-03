@@ -27,5 +27,7 @@
         public const string LABEL = "{{LABEL}}";
 
         public const string POSITION = "{{POSITION}}";
+
+        public const string INHERITANCE_CHAIN = "{{INHERITANCE_CHAIN}}";
     }
 }

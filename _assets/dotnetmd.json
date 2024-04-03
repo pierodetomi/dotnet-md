@@ -5,5 +5,8 @@
     "outputPath": "..\\_docs",
     "outputStyle": "microsoft", // default | microsoft
     "shouldCreateNamespaceFolders": true,
-    "isDocusaurusProject": true
+    "isDocusaurusProject": true,
+    "docusaurusOptions": {
+        "partialNamespaceAliasForLabels": "PieroDeTomi.DotNetMd"
+    }
 }

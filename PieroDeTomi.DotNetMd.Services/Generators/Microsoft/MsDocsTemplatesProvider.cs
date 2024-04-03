@@ -6,6 +6,8 @@
 
         public string Header { get; private set; }
 
+        public string Inheritance { get; private set; }
+
         public string TypeParams { get; private set; }
 
         public string TypeParam { get; private set; }
@@ -26,6 +28,7 @@
         private MsDocsTemplatesProvider()
         {
             Header = GetTemplateContent($"{BaseNamespace}.Resources.MsDocs.template-header.md");
+            Inheritance = GetTemplateContent($"{BaseNamespace}.Resources.MsDocs.template-inheritance.md");
             TypeParams = GetTemplateContent($"{BaseNamespace}.Resources.MsDocs.template-type-params.md");
             TypeParam = GetTemplateContent($"{BaseNamespace}.Resources.MsDocs.template-type-param.md");
             Remarks = GetTemplateContent($"{BaseNamespace}.Resources.MsDocs.template-remarks.md");

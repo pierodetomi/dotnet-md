@@ -8,6 +8,8 @@
 
         public string Inheritance { get; private set; }
         
+        public string Property { get; private set; }
+        
         public string Method { get; private set; }
         
         public string GenericParameter { get; private set; }
@@ -25,6 +27,7 @@
         {
             Header = GetTemplateContent($"{BaseNamespace}.Resources.Default.template-header.md");
             Inheritance = GetTemplateContent($"{BaseNamespace}.Resources.Default.template-inheritance.md");
+            Property = GetTemplateContent($"{BaseNamespace}.Resources.Default.template-property.md");
             Method = GetTemplateContent($"{BaseNamespace}.Resources.Default.template-method.md");
             GenericParameter = GetTemplateContent($"{BaseNamespace}.Resources.Default.template-generic-parameter.md");
             Parameter = GetTemplateContent($"{BaseNamespace}.Resources.Default.template-parameter.md");

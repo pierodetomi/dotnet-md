@@ -1,6 +1,7 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
+using System.Text;
 
 namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
 {
@@ -14,19 +15,10 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
         {
             List<string> docParts = [];
 
-            docParts.Add(MsDocsTemplatesProvider.Current.Header
-                .Replace(TemplateTokens.NAME, type.Name)
-                .Replace(TemplateTokens.TYPE, type.ObjectType)
-                .Replace(TemplateTokens.NAMESPACE, type.Namespace)
-                .Replace(TemplateTokens.ASSEMBLY, type.Assembly)
-                .Replace(TemplateTokens.DECLARATION, type.Declaration)
-                .Replace(TemplateTokens.SUMMARY, type.Summary));
+            docParts.Add(BuildHeader(type));
 
-            if (type.InheritanceChain.Count > 0)
-            {
-                docParts.Add("## Inheritance");
-                docParts.Add($"`{type.Name}` &rarr; {string.Join(" &rarr; ", type.InheritanceChain.Select(t => $"`{t}`"))}");
-            }
+            if (type.HasInheritanceChain)
+                docParts.Add(BuildInheritanceChain(type, allTypes));
 
             if (type.TypeParameters.Count > 0)
             {
@@ -77,6 +69,32 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
             }
 
             return string.Join(_separator, docParts);
+        }
+
+        private string BuildHeader(TypeModel type)
+        {
+            return MsDocsTemplatesProvider.Current.Header
+                .Replace(TemplateTokens.NAME, type.Name)
+                .Replace(TemplateTokens.TYPE, type.ObjectType)
+                .Replace(TemplateTokens.NAMESPACE, type.Namespace)
+                .Replace(TemplateTokens.ASSEMBLY, type.Assembly)
+                .Replace(TemplateTokens.DECLARATION, type.Declaration)
+                .Replace(TemplateTokens.SUMMARY, type.Summary);
+        }
+
+        private string BuildInheritanceChain(TypeModel type, List<TypeModel> allTypes)
+        {
+            var chain = new StringBuilder($"`{type.Name}` &rarr; ");
+
+            chain.Append(string.Join(" &rarr; ", type.InheritanceChain.Select(baseType =>
+            {
+                var referenceType = allTypes.FirstOrDefault(t => t.Name == baseType.Name && t.Namespace == baseType.Namespace);
+
+                if (referenceType is null) return $"`{baseType.Name}`";
+                else return $"[`{baseType.Name}`]({TryGetDocLink(referenceType, currentNamespace: type.Namespace)})";
+            })));
+
+            return MsDocsTemplatesProvider.Current.Inheritance.Replace(TemplateTokens.INHERITANCE_CHAIN, chain.ToString());
         }
     }
 }

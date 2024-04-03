@@ -11,9 +11,11 @@
     <None Remove="Resources\Default\template-inheritance.md" />
     <None Remove="Resources\Default\template-method.md" />
     <None Remove="Resources\Default\template-parameter.md" />
+    <None Remove="Resources\Default\template-property.md" />
     <None Remove="Resources\docusaurus-category.json" />
     <None Remove="Resources\docusaurus-front-matter.md" />
     <None Remove="Resources\Default\template-header.md" />
+    <None Remove="Resources\MsDocs\template-inheritance.md" />
     <None Remove="Resources\template-header.md" />
     <None Remove="Resources\template-methods.md" />
     <None Remove="Resources\template-properties.md" />
@@ -24,12 +26,14 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Default\template-generic-parameter.md" />
+    <EmbeddedResource Include="Resources\Default\template-property.md" />
     <EmbeddedResource Include="Resources\Default\template-parameter.md" />
     <EmbeddedResource Include="Resources\Default\template-method.md" />
     <EmbeddedResource Include="Resources\Default\template-inheritance.md" />
     <EmbeddedResource Include="Resources\Docusaurus\docusaurus-category.json" />
     <EmbeddedResource Include="Resources\Docusaurus\docusaurus-front-matter.md" />
     <EmbeddedResource Include="Resources\Default\template-header.md" />
+    <EmbeddedResource Include="Resources\MsDocs\template-inheritance.md" />
     <EmbeddedResource Include="Resources\MsDocs\template-header.md" />
     <EmbeddedResource Include="Resources\MsDocs\template-methods.md" />
     <EmbeddedResource Include="Resources\MsDocs\template-properties.md" />

@@ -82,15 +82,15 @@ namespace PieroDeTomi.DotNetMd.Services.Extensions
             return declaration;
         }
 
-        public static List<string> GetInheritanceChain(this Type type)
+        public static List<TypeModel> GetInheritanceChain(this Type type)
         {
-            List<string> chain = [];
+            List<TypeModel> chain = [];
 
             var currentType = type;
 
             while (currentType.BaseType is not null)
             {
-                chain.Add(currentType.BaseType.GetDisplayName());
+                chain.Add(currentType.BaseType.ToTypeModel());
                 currentType = currentType.BaseType;
             }
 

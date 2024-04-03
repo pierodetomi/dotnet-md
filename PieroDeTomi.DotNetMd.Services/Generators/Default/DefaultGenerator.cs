@@ -1,6 +1,7 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
+using System.Text;
 
 namespace PieroDeTomi.DotNetMd.Services.Generators.Default
 {
@@ -22,11 +23,8 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
                 .Replace(TemplateTokens.DECLARATION, type.Declaration)
                 .Replace(TemplateTokens.SUMMARY, type.Summary));
 
-            if (type.InheritanceChain.Count > 0)
-            {
-                docParts.Add("## Inheritance");
-                docParts.Add($"`{type.Name}` &rarr; {string.Join(" &rarr; ", type.InheritanceChain.Select(t => $"`{t}`"))}");
-            }
+            if (type.HasInheritanceChain)
+                docParts.Add(BuildInheritanceChain(type, allTypes));
 
             if (type.HasTypeParameters)
             {
@@ -50,9 +48,10 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
 
                 type.Properties.ForEach(property =>
                 {
-                    docParts.Add(DefaultTemplatesProvider.Current.Parameter
+                    docParts.Add(DefaultTemplatesProvider.Current.Property
                         .Replace(TemplateTokens.NAME, property.Name)
                         .Replace(TemplateTokens.TYPE, property.Type.Name)
+                        .Replace(TemplateTokens.DECLARATION, property.Declaration)
                         .Replace(TemplateTokens.DESCRIPTION, property.Type.Summary));
                 });
             }
@@ -94,6 +93,21 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
             }
 
             return string.Join(_separator, docParts);
+        }
+
+        private string BuildInheritanceChain(TypeModel type, List<TypeModel> allTypes)
+        {
+            var chain = new StringBuilder($"`{type.Name}` &rarr; ");
+
+            chain.Append(string.Join(" &rarr; ", type.InheritanceChain.Select(baseType =>
+            {
+                var referenceType = allTypes.FirstOrDefault(t => t.Name == baseType.Name && t.Namespace == baseType.Namespace);
+
+                if (referenceType is null) return $"`{baseType.Name}`";
+                else return $"[`{baseType.Name}`]({TryGetDocLink(referenceType, currentNamespace: type.Namespace)})";
+            })));
+
+            return DefaultTemplatesProvider.Current.Inheritance.Replace(TemplateTokens.INHERITANCE_CHAIN, chain.ToString());
         }
     }
 }
