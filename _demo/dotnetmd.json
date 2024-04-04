@@ -1,6 +1,6 @@
 {
     "assemblies": [
-        "..\\PieroDeTomi.DotNetMd.SampleLib\\bin\\Debug\\net8.0\\PieroDeTomi.DotNetMd.SampleLib.dll"
+        ".\\PieroDeTomi.DotNetMd.SampleLib\\bin\\Debug\\net8.0\\PieroDeTomi.DotNetMd.SampleLib.dll"
     ],
     "outputPath": "..\\_docs",
     "outputStyle": "default",

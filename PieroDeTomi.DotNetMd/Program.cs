@@ -49,7 +49,7 @@ class Program
     private static IServiceProvider BuildServiceProvider(FileInfo configurationFile)
     {
 #if DEBUG
-        configurationFile ??= new FileInfo(@"..\..\..\..\_assets\dotnetmd.json");
+        configurationFile ??= new FileInfo(@"..\..\..\..\_demo\dotnetmd.json");
 #else
         ArgumentNullException.ThrowIfNull(configurationFile);
 #endif
