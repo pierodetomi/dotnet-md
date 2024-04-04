@@ -84,7 +84,7 @@ namespace PieroDeTomi.DotNetMd.Services.Emitters
                             .Replace("{{SIDEBAR_LABEL}}", type.Name)
                             .Replace("{{SIDEBAR_POSITION}}", currentFileIndex.ToString());
 
-                    markdown += _generator.BuildMarkdown(type, types);
+                    markdown += _generator.BuildMarkdown(type);
                     var targetFileName = $"{_generator.GetSanitizedFileName(type.Name)}.md";
 
                     File.WriteAllText(Path.Combine(targetFolder, targetFileName), markdown);

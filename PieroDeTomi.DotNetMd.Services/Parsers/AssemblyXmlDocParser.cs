@@ -24,7 +24,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
 
             assembly.GetLoadableTypes().ForEach(type =>
             {
-                var typeIdentifier = $"T:{type.FullName}";
+                var typeIdentifier = type.GetIdentifier();
                 var typeXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{typeIdentifier}']");
 
                 if (typeXmlNode is null)
@@ -43,7 +43,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                     .ToList()
                     .ForEach(propertyInfo =>
                     {
-                        var propertyIdentifier = $"P:{propertyInfo.DeclaringType.FullName}.{propertyInfo.Name}";
+                        var propertyIdentifier = propertyInfo.GetIdentifier();
                         var propertyXmlNode = xmlDocument.SelectSingleNode($"/doc/members/member[@name='{propertyIdentifier}']");
 
                         if (propertyXmlNode is null)
@@ -51,12 +51,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
 
                         try
                         {
-                            typeDescriptor.Properties.Add(new PropertyModel
-                            {
-                                Name = propertyInfo.Name,
-                                Type = propertyInfo.PropertyType.ToTypeModel(propertyXmlNode),
-                                Declaration = propertyInfo.GetDeclaration()
-                            });
+                            typeDescriptor.Properties.Add(propertyInfo.ToPropertyModel(typeDescriptor, propertyXmlNode));
                         }
                         catch (Exception ex)
                         {
@@ -69,13 +64,20 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                     .ToList()
                     .ForEach(methodInfo =>
                     {
-                        var methodIdentifier = GetMethodIdentifier(methodInfo);
+                        var methodIdentifier = methodInfo.GetIdentifier();
+
+                        if (methodIdentifier is null)
+                        {
+                            _logger.LogError($"Error constructing method identifier for method {methodInfo.Name}");
+                            return;
+                        }
+
                         var methodXmlNode = methodIdentifier is not null ? xmlDocument.SelectSingleNode($"/doc/members/member[@name='{methodIdentifier}']") : null;
 
                         if (methodXmlNode is null)
                             _logger.LogWarning($"Unable to find XML documentation node for method {methodInfo.Name}");
 
-                        var model = methodInfo.ToMethodModel(methodXmlNode);
+                        var model = methodInfo.ToMethodModel(typeDescriptor, methodXmlNode);
                         
                         if (model is null)
                         {
@@ -83,7 +85,7 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
                             return;
                         }
                             
-                        typeDescriptor.Methods.Add(methodInfo.ToMethodModel(methodXmlNode));
+                        typeDescriptor.Methods.Add(model);
                     });
 
                 typeDescriptors.Add(typeDescriptor);
@@ -116,50 +118,6 @@ namespace PieroDeTomi.DotNetMd.Services.Parsers
         {
             var xmlFilePath = Path.GetDirectoryName(assemblyFilePath);
             return Path.Combine(xmlFilePath, $"{Path.GetFileNameWithoutExtension(assemblyFilePath)}.xml");
-        }
-
-        private string GetMethodIdentifier(MethodInfo methodInfo)
-        {
-            try
-            {
-                // Construct method identifier for generic methods
-                var genericArguments = methodInfo.IsGenericMethod ? $"``{methodInfo.GetGenericArguments().Length}" : string.Empty;
-
-                // Construct method identifier
-                var parameters = string.Join(",", methodInfo.GetParameters().Select(p => GetParameterIdentifier(p.ParameterType)));
-                return $"M:{methodInfo.DeclaringType.FullName}.{methodInfo.Name}{genericArguments}({parameters})";
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError(ex, $"Error constructing method identifier for method {methodInfo.Name}");
-                return null;
-            }
-        }
-
-        private string GetParameterIdentifier(Type parameterType)
-        {
-            try
-            {
-                if (parameterType.IsGenericMethodParameter)
-                    return $"``{parameterType.GenericParameterPosition}";
-
-                else if (parameterType.IsGenericTypeParameter)
-                    return $"`{parameterType.GenericParameterPosition}";
-
-                else if (!parameterType.IsGenericType)
-                    return parameterType.FullName;
-
-                // For generic parameters, recursively construct the parameter identifier
-                var typeName = parameterType.GetGenericTypeDefinition().FullName;
-                var typeArguments = string.Join(",", parameterType.GetGenericArguments().Select(GetParameterIdentifier));
-            
-                return $"{typeName}{{{typeArguments}}}";
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError(ex, $"Error constructing parameter identifier for type {parameterType.FullName}");
-                return null;
-            }
         }
     }
 }

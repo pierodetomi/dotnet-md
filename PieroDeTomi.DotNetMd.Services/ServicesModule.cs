@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PieroDeTomi.DotNetMd.Contracts.Services;
+using PieroDeTomi.DotNetMd.Contracts.Services.Context;
 using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 using PieroDeTomi.DotNetMd.Contracts.Services.Parsers;
+using PieroDeTomi.DotNetMd.Services.Context;
 using PieroDeTomi.DotNetMd.Services.Emitters;
 using PieroDeTomi.DotNetMd.Services.Generators.Default;
 using PieroDeTomi.DotNetMd.Services.Generators.Microsoft;
@@ -20,6 +22,8 @@ namespace PieroDeTomi.DotNetMd.Services
             services.AddScoped<IAssemblyDocParser, AssemblyXmlDocParser>();
             services.AddScoped<IDocsEmitter, FileSystemDocsEmitter>();
             services.AddScoped<IEntryPoint, DotNetMdTool>();
+            
+            services.AddSingleton<IDocsGenerationContext, DocsGenerationContext>();
             
             switch (outputStyle)
             {

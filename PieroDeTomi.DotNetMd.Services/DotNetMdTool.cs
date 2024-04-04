@@ -1,6 +1,7 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
 using PieroDeTomi.DotNetMd.Contracts.Services;
+using PieroDeTomi.DotNetMd.Contracts.Services.Context;
 using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
 using PieroDeTomi.DotNetMd.Contracts.Services.Parsers;
 using PieroDeTomi.DotNetMd.Services.Extensions;
@@ -10,14 +11,17 @@ namespace PieroDeTomi.DotNetMd.Services
     internal class DotNetMdTool : IEntryPoint
     {
         private readonly DocGenerationRuntimeConfig _configuration;
-        
+
+        private readonly IDocsGenerationContext _context;
+
         private readonly IAssemblyDocParser _parser;
         
         private readonly IDocsEmitter _emitter;
 
-        public DotNetMdTool(DocGenerationRuntimeConfig configuration, IAssemblyDocParser parser, IDocsEmitter emitter)
+        public DotNetMdTool(DocGenerationRuntimeConfig configuration, IDocsGenerationContext context, IAssemblyDocParser parser, IDocsEmitter emitter)
         {
             _configuration = configuration;
+            _context = context;
             _parser = parser;
             _emitter = emitter;
         }
@@ -31,7 +35,8 @@ namespace PieroDeTomi.DotNetMd.Services
                 Directory.CreateDirectory(_configuration.OutputPath);
 
             var types = GetTypes();
-
+            
+            _context.SetTypes(types);
             _emitter.Emit(types);
         }
 

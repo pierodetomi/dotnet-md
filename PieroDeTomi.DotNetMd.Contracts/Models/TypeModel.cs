@@ -1,7 +1,13 @@
 ﻿namespace PieroDeTomi.DotNetMd.Contracts.Models
 {
-    public class TypeModel : NamedObjectBaseModel
+    public class TypeModel : NamedObjectBaseModel, INamedObjectBaseModel
     {
+        public override ObjectCategory ObjectCategory => ObjectCategory.Type;
+
+        public TypeModel Owner { get; private set; } = null;
+
+        public string Identifier { get; set; }
+
         public string ObjectType { get; set; }
         
         public string Declaration { get; set; }

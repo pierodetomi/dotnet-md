@@ -1,5 +1,6 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Contracts.Services.Context;
 using PieroDeTomi.DotNetMd.Services.Generators.Default;
 using System.Text.RegularExpressions;
 
@@ -9,15 +10,20 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
     {
         private readonly Regex _paramrefRegEx = new(@"<paramref\sname\=\""(?<name>[^\""]+)\""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
 
-        private readonly Regex _inlineCodeRegEx = new(@"<c>(?<code>[^<]+)<\/c>", RegexOptions.Compiled | RegexOptions.Multiline);
+        private readonly Regex _inlineCodeRegEx = new(@"<c>(?<code>.*?)<\/c>", RegexOptions.Compiled | RegexOptions.Multiline);
 
         private readonly Regex _paragraphRegEx = new(@"<para>(?<content>.*?)<\/para>", RegexOptions.Compiled | RegexOptions.Singleline);
 
+        private readonly Regex _seeRegEx = new(@"<see cref=""(?<reference>[^""]+)""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
+
         protected DocGenerationRuntimeConfig Configuration { get; private set; }
 
-        public MarkdownGeneratorBase(DocGenerationRuntimeConfig configuration)
+        protected IDocsGenerationContext Context { get; private set; }
+
+        public MarkdownGeneratorBase(DocGenerationRuntimeConfig configuration, IDocsGenerationContext context)
         {
             Configuration = configuration;
+            Context = context;
         }
 
         public string GetSanitizedFileName(string name)
@@ -42,45 +48,55 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
             File.WriteAllText(filePath, content);
         }
 
-        protected string TryGetDocLink(TypeModel type, string currentNamespace)
+        protected string TryGetDocLink(INamedObjectBaseModel namedObject, string currentNamespace)
         {
-            if (type is null)
+            if (namedObject is null)
                 return null;
 
-            var basePath = "./";
-
-            if (Configuration.ShouldCreateNamespaceFolders && type.Namespace != currentNamespace)
-                basePath = $"../{type.Namespace}/";
-
-            return $"{basePath}{GetSanitizedFileName(type.Name)}";
+            return namedObject.ObjectCategory switch
+            {
+                ObjectCategory.Type => TryGetTypeDocLink(namedObject, currentNamespace),
+                ObjectCategory.Method => TryGetMethodOrPropertyDocLink(namedObject, currentNamespace),
+                ObjectCategory.Property => TryGetMethodOrPropertyDocLink(namedObject, currentNamespace),
+                _ => null,
+            };
         }
 
-        protected string GetSafeMarkdownText(string sourceText, bool isTableCell = false)
+        protected string GetSafeMarkdownText(string sourceText, string currentNamespace, bool isTableCell = false)
         {
             // Do proper transformations and escaping for safe markdown output
             if (sourceText is null)
                 return null;
 
             sourceText = ReplaceRegex(
-                // new Regex(@"<paramref\sname\=\""(?<name>[^\""]+)\""\s?\/>", RegexOptions.Multiline),
                 _paramrefRegEx,
                 sourceText,
                 "name",
                 name => $"`{name}`");
 
             sourceText = ReplaceRegex(
-                // new Regex(@"<c>(?<code>[^<]+)<\/c>", RegexOptions.Multiline),
-                _inlineCodeRegEx,
-                sourceText,
-                "code",
-                code => $"`{code}`");
-
-            sourceText = ReplaceRegex(
-                // new Regex(@"<para>(?<content>.*?)<\/para>", RegexOptions.Singleline),
                 _paragraphRegEx,
                 sourceText,
                 "content",
                 content => content);
+
+            sourceText = ReplaceRegex(
+                _seeRegEx,
+                sourceText,
+                "reference",
+                reference =>
+                {
+                    var namedObject = Context.FindObjectByIdentifier(reference);
+                    return namedObject is not null
+                        ? $"[`{namedObject.Name}`]({TryGetDocLink(namedObject, currentNamespace)})"
+                        : $"`{reference}`";
+                });
+
+            sourceText = ReplaceRegex(
+                _inlineCodeRegEx,
+                sourceText,
+                "code",
+                code => $"`{code.Replace("`", string.Empty)}`");
 
             if (isTableCell)
             {
@@ -108,6 +124,36 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
                 });
 
             return text;
+        }
+
+        private string TryGetTypeDocLink(INamedObjectBaseModel namedObject, string currentNamespace)
+        {
+            var basePath = "./";
+
+            if (Configuration.ShouldCreateNamespaceFolders && namedObject.Namespace != currentNamespace)
+                basePath = $"../{GetNamespaceForRouting(namedObject.Namespace)}/";
+
+            return $"{basePath}{GetSanitizedFileName(namedObject.Name)}";
+        }
+
+        private string TryGetMethodOrPropertyDocLink(INamedObjectBaseModel namedObject, string currentNamespace)
+        {
+            var basePath = "./";
+
+            if (Configuration.ShouldCreateNamespaceFolders && namedObject.Namespace != currentNamespace)
+                basePath = $"../{GetNamespaceForRouting(namedObject.Owner.Namespace)}/";
+
+            return $"{basePath}{GetSanitizedFileName(namedObject.Owner.Name)}#{namedObject.Name.ToLower().Replace(" ", "-")}";
+        }
+
+        private string GetNamespaceForRouting(string namespaceName)
+        {
+            var alias = Configuration.DocusaurusOptions?.PartialNamespaceAliasForLabels ?? string.Empty;
+
+            if (alias?.Length > 0 && namespaceName.StartsWith($"{alias}."))
+                namespaceName = namespaceName.Replace($"{alias}.", string.Empty);
+
+            return GetSanitizedFileName(namespaceName);
         }
     }
 }

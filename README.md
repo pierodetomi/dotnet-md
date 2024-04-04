@@ -6,7 +6,7 @@ This tool works both by reading assembly information through reflection and by r
 The idea behind this tool is to provide a simple way to generate documentation for .NET assemblies in a format that can be easily shared and read by developers... with a friendly eye to my favorite documentation tool of choice: [Docusaurus](https://docusaurus.io) :)
 
 # Installation
-**DotNetMd** is available as a [NuGet Package](https://www.nuget.org/packages/PieroDeTomi.DotNetMd), but it's mainly intended to be used as a _dotnet tool_.
+**DotNetMd** is available on [NuGet Package](https://www.nuget.org/packages/PieroDeTomi.DotNetMd) as a _dotnet tool_.
 
 It can be installed as a global tool by running the following command:
 

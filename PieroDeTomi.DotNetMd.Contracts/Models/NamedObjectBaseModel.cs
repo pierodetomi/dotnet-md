@@ -2,6 +2,8 @@
 {
     public abstract class NamedObjectBaseModel
     {
+        public abstract ObjectCategory ObjectCategory { get; }
+
         public string Name { get; set; }
         
         public string Namespace { get; set; }

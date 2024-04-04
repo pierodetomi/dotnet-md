@@ -1,9 +1,13 @@
-﻿using System.Reflection;
+﻿using PieroDeTomi.DotNetMd.Contracts.Models;
+using System.Reflection;
+using System.Xml;
 
 namespace PieroDeTomi.DotNetMd.Services.Extensions
 {
     public static class PropertyInfoExtensions
     {
+        public static string GetIdentifier(this PropertyInfo property) => $"P:{property.DeclaringType.FullName}.{property.Name}";
+
         public static string GetDeclaration(this PropertyInfo property)
         {
             var getter = property.GetGetMethod(nonPublic: true);
@@ -25,6 +29,19 @@ namespace PieroDeTomi.DotNetMd.Services.Extensions
             return getterString.Length == 0 && setterString.Length == 0
                 ? $"{type} {name}"
                 : $"{type} {name} {{ {string.Join(" ", accessors)} }}";
+        }
+
+        public static PropertyModel ToPropertyModel(this PropertyInfo property, TypeModel owner, XmlNode propertyXmlNode)
+        {
+            return new PropertyModel(owner)
+            {
+                Identifier = property.GetIdentifier(),
+                Name = property.Name,
+                Namespace = owner.Namespace,
+                Assembly = owner.Assembly,
+                Declaration = property.GetDeclaration(),
+                Type = property.PropertyType.ToTypeModel(propertyXmlNode)
+            };
         }
     }
 }

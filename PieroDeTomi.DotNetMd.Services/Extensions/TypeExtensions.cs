@@ -5,12 +5,15 @@ namespace PieroDeTomi.DotNetMd.Services.Extensions
 {
     public static class TypeExtensions
     {
+        public static string GetIdentifier(this Type type) => $"T:{type.FullName}";
+
         public static TypeModel ToTypeModel(this Type type, XmlNode xmlDocNode = null)
         {
             try
             {
                 var descriptor = new TypeModel
                 {
+                    Identifier = type.GetIdentifier(),
                     InheritanceChain = type.GetInheritanceChain(),
                     ObjectType = type.IsClass ? "class" : type.IsInterface ? "interface" : type.IsEnum ? "enum" : "struct",
                     Declaration = type.GetDeclaration(),
@@ -31,6 +34,7 @@ namespace PieroDeTomi.DotNetMd.Services.Extensions
                         descriptor.TypeParameters.Add(new ParamModel
                         {
                             Name = genericArgument.Name,
+                            Namespace = genericArgument.Namespace ?? descriptor.Namespace,
                             Description = typeParamXmlNode?.InnerXml?.Trim()
                         });
                     });

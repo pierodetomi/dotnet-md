@@ -1,5 +1,6 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Contracts.Services.Context;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 using System.Text;
 
@@ -9,9 +10,9 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
     {
         private static readonly string _separator = $"{Environment.NewLine}{Environment.NewLine}";
 
-        public DefaultGenerator(DocGenerationRuntimeConfig configuration) : base(configuration) { }
+        public DefaultGenerator(DocGenerationRuntimeConfig configuration, IDocsGenerationContext context) : base(configuration, context) { }
 
-        public string BuildMarkdown(TypeModel type, List<TypeModel> allTypes)
+        public string BuildMarkdown(TypeModel type)
         {
             List<string> docParts = [];
 
@@ -24,7 +25,7 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
                 .Replace(TemplateTokens.SUMMARY, type.Summary));
 
             if (type.HasInheritanceChain)
-                docParts.Add(BuildInheritanceChain(type, allTypes));
+                docParts.Add(BuildInheritanceChain(type));
 
             if (type.HasTypeParameters)
             {
@@ -64,7 +65,7 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
                 {
                     docParts.Add(DefaultTemplatesProvider.Current.Method
                         .Replace(TemplateTokens.NAME, method.Name.Replace("<", "&lt;").Replace(">", "&gt;"))
-                        .Replace(TemplateTokens.SUMMARY, GetSafeMarkdownText(method.Summary))
+                        .Replace(TemplateTokens.SUMMARY, GetSafeMarkdownText(method.Summary, method.Namespace))
                         .Replace(TemplateTokens.DECLARATION, method.GetSignature()));
 
                     if (method.HasParameters)
@@ -87,7 +88,7 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
                         docParts.Add($"`{method.ReturnType.Name}`");
 
                         if (method.Returns is not null)
-                            docParts.Add(GetSafeMarkdownText(method.Returns));
+                            docParts.Add(GetSafeMarkdownText(method.Returns, method.Namespace));
                     }
                 });
             }
@@ -95,13 +96,13 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
             return string.Join(_separator, docParts);
         }
 
-        private string BuildInheritanceChain(TypeModel type, List<TypeModel> allTypes)
+        private string BuildInheritanceChain(TypeModel type)
         {
             var chain = new StringBuilder($"`{type.Name}` &rarr; ");
 
             chain.Append(string.Join(" &rarr; ", type.InheritanceChain.Select(baseType =>
             {
-                var referenceType = allTypes.FirstOrDefault(t => t.Name == baseType.Name && t.Namespace == baseType.Namespace);
+                var referenceType = Context.FindObjectByIdentifier(baseType.Identifier);
 
                 if (referenceType is null) return $"`{baseType.Name}`";
                 else return $"[`{baseType.Name}`]({TryGetDocLink(referenceType, currentNamespace: type.Namespace)})";

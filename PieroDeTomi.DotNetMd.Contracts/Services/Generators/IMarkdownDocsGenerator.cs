@@ -8,6 +8,6 @@ namespace PieroDeTomi.DotNetMd.Contracts.Services.Generators
 
         void WriteDocusaurusCategoryFile(string folderPath, string label, int position, string description = null);
 
-        string BuildMarkdown(TypeModel type, List<TypeModel> allTypes);
+        string BuildMarkdown(TypeModel type);
     }
 }

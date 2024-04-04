@@ -1,4 +1,5 @@
-﻿**{{NAME}}** `{{TYPE}}`
+﻿### {{NAME}}
+`{{TYPE}}`
 
 ```cs
 {{DECLARATION}}

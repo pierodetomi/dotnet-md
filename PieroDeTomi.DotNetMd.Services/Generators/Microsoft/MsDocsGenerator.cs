@@ -1,5 +1,6 @@
 ﻿using PieroDeTomi.DotNetMd.Contracts.Models;
 using PieroDeTomi.DotNetMd.Contracts.Models.Config;
+using PieroDeTomi.DotNetMd.Contracts.Services.Context;
 using PieroDeTomi.DotNetMd.Contracts.Services.Generators;
 using System.Text;
 
@@ -9,16 +10,16 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
     {
         private static readonly string _separator = $"{Environment.NewLine}{Environment.NewLine}";
 
-        public MsDocsGenerator(DocGenerationRuntimeConfig configuration) : base(configuration) { }
+        public MsDocsGenerator(DocGenerationRuntimeConfig configuration, IDocsGenerationContext context) : base(configuration, context) { }
 
-        public string BuildMarkdown(TypeModel type, List<TypeModel> allTypes)
+        public string BuildMarkdown(TypeModel type)
         {
             List<string> docParts = [];
 
             docParts.Add(BuildHeader(type));
 
             if (type.HasInheritanceChain)
-                docParts.Add(BuildInheritanceChain(type, allTypes));
+                docParts.Add(BuildInheritanceChain(type));
 
             if (type.TypeParameters.Count > 0)
             {
@@ -39,11 +40,11 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
             {
                 var properties = string.Join(Environment.NewLine, type.Properties.Select(p =>
                 {
-                    var propertyTypeReference = allTypes.FirstOrDefault(t => t.Name == p.Type.Name);
+                    var propertyTypeReference = Context.FindObjectByIdentifier(p.Type.Identifier);
                     var propertyTypeLink = TryGetDocLink(propertyTypeReference, currentNamespace: type.Namespace);
                     var typeNameColumn = propertyTypeLink is not null ? $"[`{p.Type.Name}`]({propertyTypeLink})" : $"`{p.Type.Name}`";
 
-                    return $"| `{p.Name}` | {typeNameColumn} | {GetSafeMarkdownText(p.Type.Summary, isTableCell: true)} |";
+                    return $"| `{p.Name}` | {typeNameColumn} | {GetSafeMarkdownText(p.Type.Summary, p.Type.Namespace, isTableCell: true)} |";
                 }));
                 properties = MsDocsTemplatesProvider.Current.Properties.Replace(TemplateTokens.PROPERTIES, properties);
                 docParts.Add(properties);
@@ -58,10 +59,10 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
                     if (m.HasParameters)
                     {
                         parameters = $"<br /><br />**Parameters**<br />";
-                        parameters += string.Join("<br />", m.Parameters.Select(parameter => $"- **`{parameter.Type}` {parameter.Name}:** {GetSafeMarkdownText(parameter.Description)}"));
+                        parameters += string.Join("<br />", m.Parameters.Select(parameter => $"- **`{parameter.Type}` {parameter.Name}:** {GetSafeMarkdownText(parameter.Description, parameter.Namespace)}"));
                     }
                     
-                    return $"| `{m.GetSignature()}` | {GetSafeMarkdownText(m.Summary, isTableCell: true)}{parameters} | {GetSafeMarkdownText(m.Returns, isTableCell: true)} |";
+                    return $"| `{m.GetSignature()}` | {GetSafeMarkdownText(m.Summary, m.Namespace, isTableCell: true)}{parameters} | {GetSafeMarkdownText(m.Returns, m.Namespace, isTableCell: true)} |";
                 }));
 
                 methods = MsDocsTemplatesProvider.Current.Methods.Replace(TemplateTokens.METHODS, methods);
@@ -82,13 +83,13 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
                 .Replace(TemplateTokens.SUMMARY, type.Summary);
         }
 
-        private string BuildInheritanceChain(TypeModel type, List<TypeModel> allTypes)
+        private string BuildInheritanceChain(TypeModel type)
         {
             var chain = new StringBuilder($"`{type.Name}` &rarr; ");
 
             chain.Append(string.Join(" &rarr; ", type.InheritanceChain.Select(baseType =>
             {
-                var referenceType = allTypes.FirstOrDefault(t => t.Name == baseType.Name && t.Namespace == baseType.Namespace);
+                var referenceType = Context.FindObjectByIdentifier(baseType.Identifier);
 
                 if (referenceType is null) return $"`{baseType.Name}`";
                 else return $"[`{baseType.Name}`]({TryGetDocLink(referenceType, currentNamespace: type.Namespace)})";
