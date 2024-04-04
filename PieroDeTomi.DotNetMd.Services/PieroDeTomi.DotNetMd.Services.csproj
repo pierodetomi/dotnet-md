@@ -9,6 +9,7 @@
   <ItemGroup>
     <None Remove="Resources\Default\template-generic-parameter.md" />
     <None Remove="Resources\Default\template-inheritance.md" />
+    <None Remove="Resources\Default\template-method-remarks.md" />
     <None Remove="Resources\Default\template-method.md" />
     <None Remove="Resources\Default\template-parameter.md" />
     <None Remove="Resources\Default\template-property.md" />
@@ -26,6 +27,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Default\template-generic-parameter.md" />
+    <EmbeddedResource Include="Resources\Default\template-method-remarks.md" />
     <EmbeddedResource Include="Resources\Default\template-property.md" />
     <EmbeddedResource Include="Resources\Default\template-parameter.md" />
     <EmbeddedResource Include="Resources\Default\template-method.md" />

@@ -1,4 +1,6 @@
-﻿namespace PieroDeTomi.DotNetMd.Contracts.Models.Config
+﻿using PieroDeTomi.DotNetMd.Contracts.Models.Theming;
+
+namespace PieroDeTomi.DotNetMd.Contracts.Models.Config
 {
     public class DocGenerationConfig
     {
@@ -6,7 +8,7 @@
 
         public string OutputPath { get; set; } = @".\docs";
 
-        public string OutputStyle { get; set; } = "default"; // default | "microsoft"
+        public string OutputStyle { get; set; } = OutputStyles.Default; // OutputStyles.Default | OutputStyles.Microsoft
 
         public bool ShouldCreateNamespaceFolders { get; set; } = true;
 

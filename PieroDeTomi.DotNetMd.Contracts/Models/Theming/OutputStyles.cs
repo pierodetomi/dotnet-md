@@ -1,4 +1,4 @@
-﻿namespace PieroDeTomi.DotNetMd.Services
+﻿namespace PieroDeTomi.DotNetMd.Contracts.Models.Theming
 {
     public class OutputStyles
     {

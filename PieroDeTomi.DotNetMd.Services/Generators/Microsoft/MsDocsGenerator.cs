@@ -34,7 +34,7 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Microsoft
             }
 
             if (type.Remarks is not null)
-                docParts.Add(MsDocsTemplatesProvider.Current.Remarks.Replace(TemplateTokens.REMARKS, type.Remarks));
+                docParts.Add(MsDocsTemplatesProvider.Current.Remarks.Replace(TemplateTokens.REMARKS, GetSafeMarkdownText(type.Remarks, type.Namespace)));
 
             if (type.Properties.Count > 0)
             {

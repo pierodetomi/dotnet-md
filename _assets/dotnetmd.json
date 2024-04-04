@@ -3,7 +3,7 @@
         "..\\PieroDeTomi.DotNetMd.SampleLib\\bin\\Debug\\net8.0\\PieroDeTomi.DotNetMd.SampleLib.dll"
     ],
     "outputPath": "..\\_docs",
-    "outputStyle": "microsoft", // default | microsoft
+    "outputStyle": "default",
     "shouldCreateNamespaceFolders": true,
     "isDocusaurusProject": true,
     "docusaurusOptions": {

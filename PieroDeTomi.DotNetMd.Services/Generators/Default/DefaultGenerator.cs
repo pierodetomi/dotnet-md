@@ -40,7 +40,7 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
             if (type.Remarks is not null)
             {
                 docParts.Add($"## Remarks");
-                docParts.Add(type.Remarks);
+                docParts.Add(GetSafeMarkdownText(type.Remarks, type.Namespace));
             }
 
             if (type.HasProperties)
@@ -67,6 +67,10 @@ namespace PieroDeTomi.DotNetMd.Services.Generators.Default
                         .Replace(TemplateTokens.NAME, method.Name.Replace("<", "&lt;").Replace(">", "&gt;"))
                         .Replace(TemplateTokens.SUMMARY, GetSafeMarkdownText(method.Summary, method.Namespace))
                         .Replace(TemplateTokens.DECLARATION, method.GetSignature()));
+
+                    if (method.Remarks is not null)
+                        docParts.Add(DefaultTemplatesProvider.Current.MethodRemarks
+                            .Replace(TemplateTokens.REMARKS, GetSafeMarkdownText(method.Remarks, method.Owner.Namespace)));
 
                     if (method.HasParameters)
                     {

@@ -12,10 +12,28 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
 
         private readonly Regex _inlineCodeRegEx = new(@"<c>(?<code>.*?)<\/c>", RegexOptions.Compiled | RegexOptions.Multiline);
 
+        private readonly Regex _codeBlockRegEx = new(@"<code>(?<code>.*?)<\/code>", RegexOptions.Compiled | RegexOptions.Singleline);
+        
+        private readonly Regex _exampleRegEx = new(@"<example>(?<example>.*?)<\/example>", RegexOptions.Compiled | RegexOptions.Singleline);
+
         private readonly Regex _paragraphRegEx = new(@"<para>(?<content>.*?)<\/para>", RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private readonly Regex _seeRegEx = new(@"<see cref=""(?<reference>[^""]+)""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
+        private readonly Regex _seeCRefAutoClosingRegEx = new(@"<see\scref=""(?<cref>[^""]+)""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
 
+        private readonly Regex _seeCRefRegEx = new(@"<see\scref=""(?<cref>[^""]+)"">(?<content>[^<]+)<\/see>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _seeHRefAutoClosingRegEx = new(@"<see\shref=""(?<href>[^""]+)""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _seeHRefRegEx = new(@"<see\shref=""(?<href>[^""]+)"">(?<content>[^<]+)<\/see>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _seealsoCRefAutoClosingRegEx = new(@"<seealso\scref=""(?<cref>[^""]+)""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _seealsoCRefRegEx = new(@"<seealso\scref=""(?<cref>[^""]+)"">(?<content>[^<]+)<\/seealso>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _seealsoHRefAutoClosingRegEx = new(@"<seealso\shref=""(?<href>[^""]+)""\s?\/>", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private readonly Regex _seealsoHRefRegEx = new(@"<seealso\shref=""(?<href>[^""]+)"">(?<content>[^<]+)<\/seealso>", RegexOptions.Compiled | RegexOptions.Multiline);
+        
         protected DocGenerationRuntimeConfig Configuration { get; private set; }
 
         protected IDocsGenerationContext Context { get; private set; }
@@ -68,35 +86,73 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
             if (sourceText is null)
                 return null;
 
-            sourceText = ReplaceRegex(
-                _paramrefRegEx,
-                sourceText,
-                "name",
-                name => $"`{name}`");
+            #region <paramref> tags
 
-            sourceText = ReplaceRegex(
-                _paragraphRegEx,
-                sourceText,
-                "content",
-                content => content);
+            sourceText = ReplaceAutoClosingXmlTagByRegex(_paramrefRegEx, sourceText, "name", name => $"`{name}`");
 
-            sourceText = ReplaceRegex(
-                _seeRegEx,
-                sourceText,
-                "reference",
-                reference =>
+            #endregion
+
+            #region <para> tags
+
+            sourceText = ReplaceAutoClosingXmlTagByRegex(_paragraphRegEx, sourceText, "content", content => content);
+
+            #endregion
+
+            #region <see cref>/<seealso cref> tags
+
+            new List<Regex> { _seeCRefAutoClosingRegEx, _seealsoCRefAutoClosingRegEx }.ForEach(regex =>
+            {
+                sourceText = ReplaceAutoClosingXmlTagByRegex(regex, sourceText, "cref", cref =>
                 {
-                    var namedObject = Context.FindObjectByIdentifier(reference);
+                    var namedObject = Context.FindObjectByIdentifier(cref);
                     return namedObject is not null
                         ? $"[`{namedObject.Name}`]({TryGetDocLink(namedObject, currentNamespace)})"
-                        : $"`{reference}`";
+                        : $"`{cref}`";
                 });
+            });
 
-            sourceText = ReplaceRegex(
-                _inlineCodeRegEx,
-                sourceText,
-                "code",
-                code => $"`{code.Replace("`", string.Empty)}`");
+            new List<Regex> { _seeCRefRegEx, _seealsoCRefRegEx }.ForEach(regex =>
+            {
+                sourceText = ReplaceXmlTagByRegex(regex, sourceText, "cref", (cref, content) =>
+                {
+                    var namedObject = Context.FindObjectByIdentifier(cref);
+                    return namedObject is not null
+                        ? $"[`{content}`]({TryGetDocLink(namedObject, currentNamespace)})"
+                        : $"`{content}`";
+                });
+            });
+
+            #endregion
+
+            #region <see href>/<seealso href> tags
+
+            new List<Regex> { _seeHRefAutoClosingRegEx, _seealsoHRefAutoClosingRegEx }.ForEach(regex =>
+            {
+                sourceText = ReplaceAutoClosingXmlTagByRegex(regex, sourceText, "href", href => $"[{href}]({href})");
+            });
+
+            new List<Regex> { _seeHRefRegEx, _seealsoHRefRegEx }.ForEach(regex =>
+            {
+                sourceText = ReplaceXmlTagByRegex(regex, sourceText, "href", (href, content) => $"[{content}]({href})");
+            });
+
+            #endregion
+
+            #region <c>/<code> tags
+
+            sourceText = ReplaceAutoClosingXmlTagByRegex(_inlineCodeRegEx, sourceText, "code", code => $"`{code.Replace("`", string.Empty)}`");
+
+            sourceText = ReplaceSingleGroupRegEx(_codeBlockRegEx, sourceText, "code", code => $"```cs{Environment.NewLine}{code.Trim().Replace("`", string.Empty)}{Environment.NewLine}```");
+
+            #endregion
+
+            #region <example> tags
+
+            sourceText = ReplaceSingleGroupRegEx(_exampleRegEx, sourceText, "example", example => Configuration.IsDocusaurusProject
+                ? $":::tip[EXAMPLE]{Environment.NewLine}{example}{Environment.NewLine}:::"
+                : example);
+
+            #endregion
 
             if (isTableCell)
             {
@@ -110,7 +166,42 @@ namespace PieroDeTomi.DotNetMd.Services.Generators
             return sourceText.Trim();
         }
 
-        protected static string ReplaceRegex(Regex regex, string text, string groupName, Func<string, string> replacementGenerator)
+        protected static string ReplaceAutoClosingXmlTagByRegex(Regex regex, string text, string groupName, Func<string, string> replacementGenerator)
+        {
+            regex
+                .Matches(text)
+                .OrderByDescending(m => m.Index)
+                .ToList()
+                .ForEach(match =>
+                {
+                    text = text
+                        .Remove(match.Index, match.Length)
+                        .Insert(match.Index, replacementGenerator(match.Groups[groupName].Value));
+                });
+
+            return text;
+        }
+
+        protected static string ReplaceXmlTagByRegex(Regex regex, string text, string attributeNameGroup, Func<string, string, string> replacementGenerator)
+        {
+            regex
+                .Matches(text)
+                .OrderByDescending(m => m.Index)
+                .ToList()
+                .ForEach(match =>
+                {
+                    var attributeValue = match.Groups[attributeNameGroup].Value;
+                    var content = match.Groups["content"].Value;
+
+                    text = text
+                        .Remove(match.Index, match.Length)
+                        .Insert(match.Index, replacementGenerator(attributeValue, content));
+                });
+
+            return text;
+        }
+
+        protected static string ReplaceSingleGroupRegEx(Regex regex, string text, string groupName, Func<string, string> replacementGenerator)
         {
             regex
                 .Matches(text)

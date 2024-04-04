@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PieroDeTomi.DotNetMd.Contracts.Models.Theming;
 using PieroDeTomi.DotNetMd.Contracts.Services;
 using PieroDeTomi.DotNetMd.Contracts.Services.Context;
 using PieroDeTomi.DotNetMd.Contracts.Services.Emitters;
